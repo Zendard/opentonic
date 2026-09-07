@@ -32,7 +32,7 @@ pub async fn run_server(config: Config) {
 }
 
 async fn index_page(State(state): State<Arc<ServerState>>) -> Html<String> {
-    let path = &state.config.html_path;
+    let path = &state.config.html_dir;
     let index_page_contents = fs::read_to_string(path).expect("Can not read index page file");
     Html(index_page_contents)
 }
@@ -41,7 +41,7 @@ async fn serve_css(
     State(state): State<Arc<ServerState>>,
     extract::Path(path): extract::Path<String>,
 ) -> Result<Css, StatusCode> {
-    let full_path = state.config.static_path.join("css").join(path);
+    let full_path = state.config.static_dir.join("css").join(path);
     let css_str = fs::read_to_string(full_path).map_err(|_| StatusCode::NOT_FOUND)?;
     Ok(Css(css_str))
 }

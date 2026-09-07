@@ -10,3 +10,5 @@ The config is loaded from `/etc/opentonic/config.toml` unless specified otherwis
 |-----|----|-----------|
 |`host_address`|String|`127.0.0.1`|Address on which to host the web server, can be IPv4 or IPv6|
 |`host_port`|u16|`80`|Port on which to host the web server|
+|`html_dir`|String|`./html`|Path to the html files|
+|`static`|String|`./static`|Path to the static files|
