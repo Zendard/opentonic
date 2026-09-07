@@ -34,6 +34,7 @@ pub async fn run_server(config: Config) {
     let server = axum::Router::new()
         .route("/", get(index_page))
         .route("/static/css/{path}", get(serve_css))
+        .route("/static/js/{path}", get(serve_js))
         .route("/api/lists", get(api::get_lists))
         .route("/api/create-list", post(api::create_list))
         .with_state(server_state);
@@ -100,6 +101,26 @@ impl IntoResponse for Css {
     fn into_response(self) -> axum::response::Response {
         Response::builder()
             .header("Content-Type", "text/css; charset=utf-8")
+            .body(self.0.into())
+            .unwrap()
+    }
+}
+
+async fn serve_js(
+    State(state): State<Arc<ServerState>>,
+    extract::Path(path): extract::Path<String>,
+) -> Result<Js, StatusCode> {
+    let full_path = state.config.static_dir.join("js").join(path);
+    let js_str = fs::read_to_string(full_path).map_err(|_| StatusCode::NOT_FOUND)?;
+    Ok(Js(js_str))
+}
+
+struct Js(String);
+
+impl IntoResponse for Js {
+    fn into_response(self) -> axum::response::Response {
+        Response::builder()
+            .header("Content-Type", "text/javascript; charset=utf-8")
             .body(self.0.into())
             .unwrap()
     }
