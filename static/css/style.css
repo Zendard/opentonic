@@ -1,0 +1,14 @@
+:root {
+  --background: #161616;
+  --primary: #323232;
+  --accent: #33b1ff;
+  --text: #ffffff;
+  --br: 15px;
+}
+
+body {
+  background-color: var(--background);
+  color: var(--text);
+  font-family: sans-serif;
+  border-radius: var(--br);
+}
