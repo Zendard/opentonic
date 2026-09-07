@@ -3,25 +3,39 @@ use axum::{
     extract::{self, State},
     http::StatusCode,
     response::{Html, IntoResponse, Response},
-    routing::get,
+    routing::{get, post},
 };
+use sqlx::{Pool, Sqlite};
 use std::{fs, sync::Arc};
 
+mod api;
 pub mod config;
+
 pub type OpentonicError = Box<dyn std::error::Error>;
+
+pub struct List;
 
 struct ServerState {
     pub config: Config,
+    pub db_conn: sqlx::Pool<Sqlite>,
 }
 
 #[tokio::main]
 pub async fn run_server(config: Config) {
     let host_socket = std::net::SocketAddr::new(config.host_address, config.host_port);
 
-    let server_state = Arc::new(ServerState { config });
+    let db_url = "sqlite://".to_string() + config.db_file.to_str().unwrap();
+    let db_conn = sqlx::Pool::connect(&db_url)
+        .await
+        .expect("Could not connect to database");
+    init_db(&db_conn).await;
+
+    let server_state = Arc::new(ServerState { config, db_conn });
     let server = axum::Router::new()
         .route("/", get(index_page))
         .route("/static/css/{path}", get(serve_css))
+        .route("/api/lists", get(api::get_lists))
+        .route("/api/create-list", post(api::create_list))
         .with_state(server_state);
 
     let listener = tokio::net::TcpListener::bind(host_socket)
@@ -29,6 +43,40 @@ pub async fn run_server(config: Config) {
         .expect("Failed to bind to socket");
     println!("Starting server...");
     axum::serve(listener, server).await.unwrap();
+}
+
+async fn init_db(db: &Pool<Sqlite>) {
+    sqlx::query!(
+        "
+        PRAGMA foreign_keys=on;
+        CREATE TABLE IF NOT EXISTS Lists(
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            name TEXT NOT NULL,
+            users BLOB, 
+            products BLOB
+        );
+        CREATE TABLE IF NOT EXISTS Categories(
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            name TEXT NOT NULL,
+            icon BLOB
+        );
+        CREATE TABLE IF NOT EXISTS Products(
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            name TEXT NOT NULL, 
+            category INTEGER,
+            FOREIGN KEY(category) REFERENCES Categories(id)
+        );
+        CREATE TABLE IF NOT EXISTS ListItems(
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            checked BOOL NOT NULL DEFAULT (false),
+            product INTEGER,
+            FOREIGN KEY(product) REFERENCES Products(id)
+        )
+        "
+    )
+    .execute(db)
+    .await
+    .unwrap();
 }
 
 async fn index_page(State(state): State<Arc<ServerState>>) -> Html<String> {
