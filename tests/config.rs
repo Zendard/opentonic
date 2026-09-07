@@ -17,5 +17,6 @@ fn load_config() {
 
     let config = config::Config::get(config_path.to_str()).unwrap();
     assert_eq!(config.host_port, 1234);
-    assert_eq!(config.host_address, Ipv4Addr::new(1, 2, 3, 4))
+    assert_eq!(config.host_address, Ipv4Addr::new(1, 2, 3, 4));
+    std::fs::remove_file(config_path).unwrap();
 }
