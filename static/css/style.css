@@ -12,3 +12,7 @@ body {
   font-family: sans-serif;
   border-radius: var(--br);
 }
+
+.data {
+  display: none;
+}

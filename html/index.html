@@ -1,16 +1,18 @@
 <!DOCTYPE html>
 <html lang="en">
-  <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1">
-    <title>Opentonic</title>
-    <link href="static/css/style.css" rel="stylesheet">
-  </head>
-  <body>
- <h1>Opentonic</h1> 
- <a href="create-list">Create list</a>
- <ul id="lists"></ul>
+ <head>
+   <meta charset="UTF-8">
+   <meta name="viewport" content="width=device-width, initial-scale=1">
+   <title>Opentonic</title>
+   <link href="{url_pfx}/static/css/style.css" rel="stylesheet">
+ </head>
+ <body>
+  <h1>Opentonic</h1> 
+  <a href="create-list">Create list</a>
+  <ul id="lists"></ul>
 
- <script src="static/js/fetch_lists.js"></script>
+  <div id="user" class="data">{user}</div> 
+  <div id="url_pfx" class="data">{url_pfx}</div> 
+  <script src="{url_pfx}/static/js/fetch_lists.js"></script>
   </body>
 </html>

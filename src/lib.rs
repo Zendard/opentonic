@@ -1,7 +1,7 @@
 use crate::config::Config;
 use axum::{
     extract::{self, State},
-    http::StatusCode,
+    http::{HeaderMap, StatusCode},
     response::{Html, IntoResponse, Response},
     routing::{get, post},
 };
@@ -58,19 +58,19 @@ async fn init_db(db: &Pool<Sqlite>) {
         CREATE TABLE IF NOT EXISTS Lists(
             id INTEGER PRIMARY KEY AUTOINCREMENT,
             name TEXT NOT NULL,
-            users INTEGER NOT NULL, 
-            products INTEGER NOT NULL
+            owner TEXT NOT NULL
         );
         CREATE TABLE IF NOT EXISTS List_Accesses(
             list_id INTEGER NOT NULL,
             user TEXT NOT NULL,
-            PRIMARY KEY(list_id,user)
+            PRIMARY KEY(list_id,user),
             FOREIGN KEY(list_id) REFERENCES Lists(id)
         );
         CREATE TABLE IF NOT EXISTS Categories(
             id INTEGER PRIMARY KEY AUTOINCREMENT,
             name TEXT NOT NULL,
-            icon BLOB
+            icon BLOB,
+            order_index INTEGER DEFAULT id
         );
         CREATE TABLE IF NOT EXISTS Products(
             id INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -82,8 +82,12 @@ async fn init_db(db: &Pool<Sqlite>) {
             id INTEGER PRIMARY KEY AUTOINCREMENT,
             checked BOOL DEFAULT false,
             product_id INTEGER NOT NULL,
-            FOREIGN KEY(product_id) REFERENCES Products(id)
-        )
+            list_id INTEGER NOT NULL,
+            added_by TEXT NOT NULL,
+            added_on DATETIME DEFAULT CURRENT_TIMESTAMP,
+            FOREIGN KEY(product_id) REFERENCES Products(id),
+            FOREIGN KEY(list_id) REFERENCES Lists(id)
+        );
         "
     )
     .execute(db)
@@ -91,18 +95,36 @@ async fn init_db(db: &Pool<Sqlite>) {
     .unwrap();
 }
 
-async fn index_page(State(state): State<Arc<ServerState>>) -> Html<String> {
+async fn index_page(
+    headers: HeaderMap,
+    State(state): State<Arc<ServerState>>,
+) -> Result<Html<String>, StatusCode> {
+    let user = headers
+        .get("X-Forwarded-User")
+        .ok_or(StatusCode::UNAUTHORIZED)?
+        .to_str()
+        .map_err(|_| StatusCode::BAD_REQUEST)?;
     let path = &state.config.html_dir.join("index.html");
     let index_page_contents = fs::read_to_string(path).expect("Can not read index page file");
-    Html(index_page_contents)
+    let index_page_contents = index_page_contents.replace("{user}", user);
+    let index_page_contents = index_page_contents.replace("{url_pfx}", &state.config.url_prefix);
+    Ok(Html(index_page_contents))
 }
 
 async fn serve_html(
+    headers: HeaderMap,
     State(state): State<Arc<ServerState>>,
     extract::Path(path): extract::Path<String>,
 ) -> Result<Html<String>, StatusCode> {
+    let user = headers
+        .get("X-Forwarded-User")
+        .ok_or(StatusCode::UNAUTHORIZED)?
+        .to_str()
+        .map_err(|_| StatusCode::BAD_REQUEST)?;
     let full_path = state.config.html_dir.join(path + ".html");
     let html_str = fs::read_to_string(full_path).map_err(|_| StatusCode::NOT_FOUND)?;
+    let html_str = html_str.replace("{user}", user);
+    let html_str = html_str.replace("{url_pfx}", &state.config.url_prefix);
     Ok(Html(html_str))
 }
 
