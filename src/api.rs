@@ -150,3 +150,59 @@ pub async fn fetch_list(
         list_items: items,
     }))
 }
+
+#[derive(Deserialize)]
+pub struct AddListItem {
+    name: String,
+}
+pub async fn add_list_item(
+    headers: HeaderMap,
+    extract::Path(list_id): extract::Path<String>,
+    State(state): State<Arc<ServerState>>,
+    Json(body): Json<AddListItem>,
+) -> Result<Json<i64>, StatusCode> {
+    let user = headers
+        .get("X-Forwarded-User")
+        .ok_or(StatusCode::UNAUTHORIZED)?
+        .to_str()
+        .map_err(|_| StatusCode::BAD_REQUEST)?;
+    let product_id = sqlx::query!(
+        "
+        SELECT id FROM Products WHERE name=?;
+        ",
+        body.name
+    )
+    .fetch_optional(&state.db_conn)
+    .await
+    .map_err(|_| StatusCode::INTERNAL_SERVER_ERROR)?;
+
+    let product_id = if let Some(product_id) = product_id {
+        product_id.id
+    } else {
+        sqlx::query!(
+            "
+            INSERT INTO Products(name) VALUES (?);
+            SELECT id FROM Products WHERE id==last_insert_rowid();
+            ",
+            body.name
+        )
+        .fetch_one(&state.db_conn)
+        .await
+        .map_err(|_| StatusCode::INTERNAL_SERVER_ERROR)?
+        .id
+    };
+
+    sqlx::query!(
+        "
+        INSERT INTO ListItems(product_id,list_id,added_by) VALUES (?,?,?);
+        SELECT id FROM ListItems WHERE id = last_insert_rowid();
+        ",
+        product_id,
+        list_id,
+        user
+    )
+    .fetch_one(&state.db_conn)
+    .await
+    .map(|rec| Json(rec.id))
+    .map_err(|_| StatusCode::INTERNAL_SERVER_ERROR)
+}
