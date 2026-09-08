@@ -37,7 +37,11 @@ pub async fn run_server(config: Config) {
         .route(&(url_pfx.clone() + "/static/css/{path}"), get(serve_css))
         .route(&(url_pfx.clone() + "/static/js/{path}"), get(serve_js))
         .route(&(url_pfx.clone() + "/api/lists"), get(api::get_lists))
-        .route(&(url_pfx + "/api/create-list"), post(api::create_list))
+        .route(
+            &(url_pfx.clone() + "/api/create-list"),
+            post(api::create_list),
+        )
+        .route(&(url_pfx.clone() + "/{path}"), get(serve_html))
         .with_state(server_state);
 
     let listener = tokio::net::TcpListener::bind(host_socket)
@@ -88,9 +92,18 @@ async fn init_db(db: &Pool<Sqlite>) {
 }
 
 async fn index_page(State(state): State<Arc<ServerState>>) -> Html<String> {
-    let path = &state.config.html_dir;
+    let path = &state.config.html_dir.join("index.html");
     let index_page_contents = fs::read_to_string(path).expect("Can not read index page file");
     Html(index_page_contents)
+}
+
+async fn serve_html(
+    State(state): State<Arc<ServerState>>,
+    extract::Path(path): extract::Path<String>,
+) -> Result<Html<String>, StatusCode> {
+    let full_path = state.config.html_dir.join(path + ".html");
+    let html_str = fs::read_to_string(full_path).map_err(|_| StatusCode::NOT_FOUND)?;
+    Ok(Html(html_str))
 }
 
 async fn serve_css(

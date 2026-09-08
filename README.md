@@ -13,3 +13,4 @@ The config is loaded from `/etc/opentonic/config.toml` unless specified otherwis
 |`html_dir`|String|`./html`|Path to the HTML files|
 |`static`|String|`./static`|Path to the static files|
 |`db_file`|String|`./db.sqlite`|Path to the SQLite database file|
+|`url_prefix`|String|`/`|Url prefix on which to receive requests (for running under a subdirectory)|
