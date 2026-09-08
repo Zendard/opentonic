@@ -41,6 +41,10 @@ pub async fn run_server(config: Config) {
             &(url_pfx.clone() + "/api/create-list"),
             post(api::create_list),
         )
+        .route(
+            &(url_pfx.clone() + "/api/list/{list_id}"),
+            get(api::fetch_list),
+        )
         .route(&(url_pfx.clone() + "/{path}"), get(serve_html))
         .with_state(server_state);
 
@@ -75,16 +79,16 @@ async fn init_db(db: &Pool<Sqlite>) {
         CREATE TABLE IF NOT EXISTS Products(
             id INTEGER PRIMARY KEY AUTOINCREMENT,
             name TEXT NOT NULL, 
-            category INTEGER,
-            FOREIGN KEY(category) REFERENCES Categories(id)
+            category_id INTEGER,
+            FOREIGN KEY(category_id) REFERENCES Categories(id)
         );
         CREATE TABLE IF NOT EXISTS ListItems(
             id INTEGER PRIMARY KEY AUTOINCREMENT,
-            checked BOOL DEFAULT false,
+            checked BOOL NOT NULL DEFAULT false,
             product_id INTEGER NOT NULL,
             list_id INTEGER NOT NULL,
             added_by TEXT NOT NULL,
-            added_on DATETIME DEFAULT CURRENT_TIMESTAMP,
+            added_on DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
             FOREIGN KEY(product_id) REFERENCES Products(id),
             FOREIGN KEY(list_id) REFERENCES Lists(id)
         );
