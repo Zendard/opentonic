@@ -1,0 +1,21 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>View List</title>
+    <link href="{url_pfx}/static/css/style.css" rel="stylesheet">
+  </head>
+  <body>
+  <h1 id="list_name">...</h1>
+  <h4>Users who have access:</h4>
+  <ul id="users"> </ul>
+  <h2>Items on list:</h2>
+  <ul id="list_items"></ul>
+
+  <div id="user" class="data">{user}</div> 
+  <div id="url_pfx" class="data">{url_pfx}</div> 
+  <div id="list_id" class="data">{list_id}</div> 
+  <script src="{url_pfx}/static/js/fetch_list.js"></script>
+  </body>
+</html>

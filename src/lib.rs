@@ -45,6 +45,7 @@ pub async fn run_server(config: Config) {
             &(url_pfx.clone() + "/api/list/{list_id}"),
             get(api::fetch_list),
         )
+        .route(&(url_pfx.clone() + "/list/{list_id}"), get(fetch_list))
         .route(&(url_pfx.clone() + "/{path}"), get(serve_html))
         .with_state(server_state);
 
@@ -129,6 +130,28 @@ async fn serve_html(
     let html_str = fs::read_to_string(full_path).map_err(|_| StatusCode::NOT_FOUND)?;
     let html_str = html_str.replace("{user}", user);
     let html_str = html_str.replace("{url_pfx}", &state.config.url_prefix);
+    Ok(Html(html_str))
+}
+
+async fn fetch_list(
+    headers: HeaderMap,
+    State(state): State<Arc<ServerState>>,
+    extract::Path(list_id): extract::Path<String>,
+) -> Result<Html<String>, StatusCode> {
+    list_id
+        .parse::<i64>()
+        .map_err(|_| StatusCode::BAD_REQUEST)?;
+    let user = headers
+        .get("X-Forwarded-User")
+        .ok_or(StatusCode::UNAUTHORIZED)?
+        .to_str()
+        .map_err(|_| StatusCode::BAD_REQUEST)?;
+
+    let full_path = state.config.html_dir.join("list.html");
+    let html_str = fs::read_to_string(full_path).map_err(|_| StatusCode::NOT_FOUND)?;
+    let html_str = html_str.replace("{user}", user);
+    let html_str = html_str.replace("{url_pfx}", &state.config.url_prefix);
+    let html_str = html_str.replace("{list_id}", &list_id);
     Ok(Html(html_str))
 }
 
