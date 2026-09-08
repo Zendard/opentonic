@@ -53,8 +53,14 @@ async fn init_db(db: &Pool<Sqlite>) {
         CREATE TABLE IF NOT EXISTS Lists(
             id INTEGER PRIMARY KEY AUTOINCREMENT,
             name TEXT NOT NULL,
-            users BLOB, 
-            products BLOB
+            users INTEGER NOT NULL, 
+            products INTEGER NOT NULL
+        );
+        CREATE TABLE IF NOT EXISTS List_Accesses(
+            list_id INTEGER NOT NULL,
+            user TEXT NOT NULL,
+            PRIMARY KEY(list_id,user)
+            FOREIGN KEY(list_id) REFERENCES Lists(id)
         );
         CREATE TABLE IF NOT EXISTS Categories(
             id INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -69,9 +75,9 @@ async fn init_db(db: &Pool<Sqlite>) {
         );
         CREATE TABLE IF NOT EXISTS ListItems(
             id INTEGER PRIMARY KEY AUTOINCREMENT,
-            checked BOOL NOT NULL DEFAULT (false),
-            product INTEGER,
-            FOREIGN KEY(product) REFERENCES Products(id)
+            checked BOOL DEFAULT false,
+            product_id INTEGER NOT NULL,
+            FOREIGN KEY(product_id) REFERENCES Products(id)
         )
         "
     )
