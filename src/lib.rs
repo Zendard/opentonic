@@ -30,13 +30,14 @@ pub async fn run_server(config: Config) {
         .expect("Could not connect to database");
     init_db(&db_conn).await;
 
+    let url_pfx = config.url_prefix.clone();
     let server_state = Arc::new(ServerState { config, db_conn });
     let server = axum::Router::new()
-        .route("/", get(index_page))
-        .route("/static/css/{path}", get(serve_css))
-        .route("/static/js/{path}", get(serve_js))
-        .route("/api/lists", get(api::get_lists))
-        .route("/api/create-list", post(api::create_list))
+        .route(&(url_pfx.clone() + "/"), get(index_page))
+        .route(&(url_pfx.clone() + "/static/css/{path}"), get(serve_css))
+        .route(&(url_pfx.clone() + "/static/js/{path}"), get(serve_js))
+        .route(&(url_pfx.clone() + "/api/lists"), get(api::get_lists))
+        .route(&(url_pfx + "/api/create-list"), post(api::create_list))
         .with_state(server_state);
 
     let listener = tokio::net::TcpListener::bind(host_socket)

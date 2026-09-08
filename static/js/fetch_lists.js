@@ -1,5 +1,5 @@
 async function fetch_lists() {
-  const response = await fetch("/api/lists")
+  const response = await fetch("api/lists")
   const lists = await response.json()
   return lists
 }
@@ -12,7 +12,7 @@ async function main() {
     const element = document.createElement("li")
     const name_element = document.createElement("a")
     name_element.innerText = list.name
-    name_element.href = `/list/${list.id}`
+    name_element.href = `list/${list.id}`
 
     const users_list = document.createElement("ul")
     if (list.users) {
