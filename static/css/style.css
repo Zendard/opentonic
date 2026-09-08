@@ -1,6 +1,7 @@
 :root {
   --background: #161616;
   --primary: #323232;
+  --secondary: #565656;
   --accent: #33b1ff;
   --text: #ffffff;
   --br: 15px;
@@ -11,8 +12,93 @@ body {
   color: var(--text);
   font-family: sans-serif;
   border-radius: var(--br);
+  color-scheme: dark;
 }
 
 .data {
   display: none;
+}
+
+.button,
+button {
+  background-color: var(--primary);
+  border: none;
+  color: var(--text);
+  text-decoration: none;
+  border-radius: var(--br);
+  padding: 0.5rem 1rem;
+}
+
+.hover:hover {
+  filter: brightness(120%);
+  cursor: pointer;
+}
+
+.accent {
+  background-color: var(--accent);
+}
+
+a {
+  font-weight: 700;
+  color: var(--accent);
+}
+
+ul.cards {
+  display: flex;
+  list-style: none;
+  flex-direction: column;
+  padding: 0px;
+
+  &>li {
+    background-color: var(--primary);
+    border-radius: var(--br);
+    padding: calc(var(--br) / 2) var(--br);
+    margin-bottom: 0.5rem;
+
+    &>a,
+    &>h4 {
+      text-decoration: none;
+      font-size: 1.5rem;
+      margin: 0px;
+    }
+
+    &>p {
+      color: var(--secondary);
+      margin: 0px;
+    }
+
+    &:hover {
+      background-color: var(--secondary);
+
+      &>p {
+        color: var(--text);
+      }
+    }
+  }
+}
+
+ul.chips {
+  display: flex;
+  list-style: none;
+  padding: 0px;
+
+  &>li {
+    background-color: var(--primary);
+    border-radius: var(--br);
+    padding: calc(var(--br) / 4) var(--br);
+    transition: 0.1s margin;
+    margin-bottom: 0.5rem;
+
+    &>a,
+    &>h4 {
+      text-decoration: none;
+      font-size: 1.5rem;
+      margin: 0px;
+    }
+
+    &>p {
+      color: var(--secondary);
+      margin: 0px;
+    }
+  }
 }
