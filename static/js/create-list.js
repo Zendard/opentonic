@@ -6,7 +6,6 @@ form.addEventListener("submit", submitForm)
 
 async function submitForm(_) {
   const form_data = new FormData(form)
-  console.log(form_data)
   const res = await fetch(`${url_pfx}/api/create-list`, {
     method: "POST",
     body: JSON.stringify(Object.fromEntries(form_data)),
