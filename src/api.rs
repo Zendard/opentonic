@@ -218,7 +218,6 @@ pub async fn check_list_item(
     extract::Query(param): extract::Query<CheckListItemParam>,
     State(state): State<Arc<ServerState>>,
 ) -> Result<Json<i64>, StatusCode> {
-    std::thread::sleep(std::time::Duration::from_secs(3));
     let user = headers
         .get("X-Forwarded-User")
         .ok_or(StatusCode::UNAUTHORIZED)?

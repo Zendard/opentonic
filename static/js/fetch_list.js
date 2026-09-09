@@ -24,6 +24,7 @@ async function main() {
 }
 async function append_list_items(list) {
   const list_items_list = document.getElementById("list_items")
+  const now = new Date(Date.now())
   list.list_items.forEach((list_item) => {
     const list_item_element = document.createElement("li")
     const div = document.createElement("div")
@@ -31,7 +32,12 @@ async function append_list_items(list) {
     list_item_name.innerText = list_item.name
     div.appendChild(list_item_name)
     const list_item_subtext = document.createElement("p")
-    list_item_subtext.innerText = `Added by ${list_item.added_by} on ${list_item.added_on}`
+    const added_on = new Date(Date.parse(list_item.added_on))
+    if (added_on.toDateString() == now.toDateString()) {
+      list_item_subtext.innerText = `Added by ${list_item.added_by} at ${new String(added_on.getHours()).padStart(2, 0)}:${new String(added_on.getMinutes()).padStart(2, 0)}`
+    } else {
+      list_item_subtext.innerText = `Added by ${list_item.added_by} on ${added_on.getDay()}/${added_on.getMonth()}`
+    }
     div.appendChild(list_item_subtext)
     const list_item_checkbox = document.createElement("button")
     list_item_checkbox.dataset["list_item_id"] = list_item.id
@@ -61,7 +67,7 @@ async function toggle_list_item_check(e) {
 
 async function add_list_item(_) {
   const form_data = new FormData(add_list_item_form)
-  const res = await fetch(`${url_pfx} / api / add - list - item / ${list_id}`, {
+  const res = await fetch(`${url_pfx}/api/add-list-item/${list_id}`, {
     method: "POST",
     body: JSON.stringify(Object.fromEntries(form_data)),
     headers: { "Content-Type": "application/json" }
