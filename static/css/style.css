@@ -4,6 +4,9 @@
   --secondary: #565656;
   --accent: #33b1ff;
   --text: #ffffff;
+  --positive: #42be65;
+  --negative: #ee5396;
+  --warning: #ffab91;
   --br: 15px;
 }
 
@@ -54,23 +57,63 @@ ul.cards {
     border-radius: var(--br);
     padding: calc(var(--br) / 2) var(--br);
     margin-bottom: 0.5rem;
+    display: flex;
+    justify-content: space-between;
 
     &>a,
-    &>h4 {
+    &>h4,
+    &>div>a,
+    &>div>h4 {
       text-decoration: none;
       font-size: 1.5rem;
       margin: 0px;
     }
 
-    &>p {
+    &>p,
+    &>div>p {
       color: var(--secondary);
       margin: 0px;
+    }
+
+    &>.check-button {
+      border: 0.3rem solid var(--positive);
+      color: var(--positive);
+      border-radius: var(--br);
+      font-weight: 700;
+      font-size: 1.5rem;
+      min-width: 3rem;
+      min-height: 3rem;
+
+      &::after {
+        content: "";
+        margin: -1rem;
+      }
+
+      &.checked {
+        background-color: var(--positive);
+        color: var(--primary);
+
+        &::after {
+          content: "✓";
+        }
+      }
+
+      &.loading {
+        border-color: var(--warning);
+        color: var(--warning);
+        background-color: var(--secondary);
+
+        &::after {
+          content: "~";
+        }
+      }
     }
 
     &:hover {
       background-color: var(--secondary);
 
-      &>p {
+      &>p,
+      &>div>p {
         color: var(--text);
       }
     }

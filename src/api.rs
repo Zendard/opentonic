@@ -90,6 +90,7 @@ pub struct FetchList {
 
 #[derive(Serialize, Debug)]
 pub struct ListItem {
+    id: i64,
     name: String,
     checked: bool,
     category: Option<String>,
@@ -111,7 +112,7 @@ pub async fn fetch_list(
     let items = sqlx::query_as!(
         ListItem,
         "
-        SELECT p.name as name,c.name as category,added_by,datetime(added_on) as added_on,checked FROM ListItems li
+        SELECT li.id,p.name as name,c.name as category,added_by,datetime(added_on) as added_on,checked FROM ListItems li
         JOIN Products p ON p.id = li.product_id
         LEFT JOIN Categories c ON c.id = p.category_id 
         WHERE li.list_id = ?;
@@ -217,6 +218,7 @@ pub async fn check_list_item(
     extract::Query(param): extract::Query<CheckListItemParam>,
     State(state): State<Arc<ServerState>>,
 ) -> Result<Json<i64>, StatusCode> {
+    std::thread::sleep(std::time::Duration::from_secs(3));
     let user = headers
         .get("X-Forwarded-User")
         .ok_or(StatusCode::UNAUTHORIZED)?
