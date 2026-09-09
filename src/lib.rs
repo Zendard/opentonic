@@ -54,6 +54,10 @@ pub async fn run_server(config: Config) {
             &(url_pfx.clone() + "/api/check-list-item/{list_item_id}"),
             post(api::check_list_item),
         )
+        .route(
+            &(url_pfx.clone() + "/api/add-user-to-list/{list_id}"),
+            post(api::add_user_to_list),
+        )
         .route(&(url_pfx.clone() + "/{path}"), get(serve_html))
         .with_state(server_state);
 

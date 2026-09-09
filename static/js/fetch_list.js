@@ -47,8 +47,8 @@ async function append_list_items(list) {
       list_item_checkbox.classList.add("checked")
     }
     list_item_checkbox.addEventListener("click", toggle_list_item_check)
-    list_item_element.appendChild(div)
     list_item_element.appendChild(list_item_checkbox)
+    list_item_element.appendChild(div)
     list_items_list.appendChild(list_item_element)
   })
 }

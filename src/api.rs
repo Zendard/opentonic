@@ -252,3 +252,51 @@ pub async fn check_list_item(
     .map_err(|_| StatusCode::INTERNAL_SERVER_ERROR)?;
     Ok(Json(list_item_id))
 }
+
+#[derive(Deserialize)]
+pub struct AddUserToList {
+    user: String,
+}
+#[axum::debug_handler]
+pub async fn add_user_to_list(
+    headers: HeaderMap,
+    extract::Path(list_id): extract::Path<String>,
+    State(state): State<Arc<ServerState>>,
+    Json(body): Json<AddUserToList>,
+) -> Result<Json<String>, StatusCode> {
+    let user = headers
+        .get("X-Forwarded-User")
+        .ok_or(StatusCode::UNAUTHORIZED)?
+        .to_str()
+        .map_err(|_| StatusCode::BAD_REQUEST)?;
+    let list_id: i64 = list_id.parse().map_err(|_| StatusCode::BAD_REQUEST)?;
+
+    let owner = sqlx::query!(
+        "
+        SELECT owner FROM Lists WHERE id = ?
+        ",
+        list_id
+    )
+    .fetch_optional(&state.db_conn)
+    .await
+    .map_err(|_| StatusCode::INTERNAL_SERVER_ERROR)?
+    .ok_or(StatusCode::NOT_FOUND)?
+    .owner;
+
+    if owner != user {
+        return Err(StatusCode::UNAUTHORIZED);
+    }
+
+    sqlx::query!(
+        "
+        INSERT INTO List_Accesses(list_id,user) VALUES (?,?) ON CONFLICT DO NOTHING;
+        ",
+        list_id,
+        body.user
+    )
+    .execute(&state.db_conn)
+    .await
+    .map_err(|_| StatusCode::INTERNAL_SERVER_ERROR)?;
+
+    Ok(Json(body.user.to_string()))
+}
