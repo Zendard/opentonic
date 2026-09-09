@@ -206,3 +206,48 @@ pub async fn add_list_item(
     .map(|rec| Json(rec.id))
     .map_err(|_| StatusCode::INTERNAL_SERVER_ERROR)
 }
+
+#[derive(Deserialize)]
+pub struct CheckListItemParam {
+    checked: bool,
+}
+pub async fn check_list_item(
+    headers: HeaderMap,
+    extract::Path(list_item_id): extract::Path<String>,
+    extract::Query(param): extract::Query<CheckListItemParam>,
+    State(state): State<Arc<ServerState>>,
+) -> Result<Json<i64>, StatusCode> {
+    let user = headers
+        .get("X-Forwarded-User")
+        .ok_or(StatusCode::UNAUTHORIZED)?
+        .to_str()
+        .map_err(|_| StatusCode::BAD_REQUEST)?;
+    let list_item_id: i64 = list_item_id.parse().map_err(|_| StatusCode::BAD_REQUEST)?;
+
+    sqlx::query!(
+        "
+        SELECT la.user FROM ListItems li
+        JOIN Lists l ON li.list_id = l.id
+        JOIN List_Accesses la ON l.id = la.list_id
+        WHERE li.id=? AND la.user = ?
+        ",
+        list_item_id,
+        user
+    )
+    .fetch_optional(&state.db_conn)
+    .await
+    .map_err(|_| StatusCode::INTERNAL_SERVER_ERROR)?
+    .ok_or(StatusCode::UNAUTHORIZED)?;
+
+    sqlx::query!(
+        "
+        UPDATE ListItems SET checked=? WHERE id=?;
+        ",
+        param.checked,
+        list_item_id
+    )
+    .execute(&state.db_conn)
+    .await
+    .map_err(|_| StatusCode::INTERNAL_SERVER_ERROR)?;
+    Ok(Json(list_item_id))
+}
