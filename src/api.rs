@@ -333,3 +333,35 @@ pub async fn delete_list_item(
 
     Ok(Json(deleted_id))
 }
+
+pub async fn delete_list(
+    headers: HeaderMap,
+    extract::Path(list_id): extract::Path<String>,
+    State(state): State<Arc<ServerState>>,
+) -> Result<Json<i64>, StatusCode> {
+    let user = headers
+        .get("X-Forwarded-User")
+        .ok_or(StatusCode::UNAUTHORIZED)?
+        .to_str()
+        .map_err(|_| StatusCode::BAD_REQUEST)?;
+    let list_item_id: i64 = list_item_id.parse().map_err(|_| StatusCode::BAD_REQUEST)?;
+
+    sqlx::query!(
+        "SELECT owner FROM Lists WHERE owner=? AND id=?",
+        user,
+        list_id
+    )
+    .fetch_optional(&state.db_conn)
+    .await
+    .map_err(|_| StatusCode::INTERNAL_SERVER_ERROR)?
+    .ok_or(StatusCode::UNAUTHORIZED)?;
+
+    let deleted_id = sqlx::query!("DELETE FROM Lists WHERE id=? RETURNING id", list_id)
+        .fetch_one(&state.db_conn)
+        .await
+        .map_err(|_| StatusCode::INTERNAL_SERVER_ERROR)?
+        .id
+        .ok_or(StatusCode::INTERNAL_SERVER_ERROR)?;
+
+    Ok(Json(deleted_id))
+}
