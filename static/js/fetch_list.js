@@ -26,30 +26,26 @@ async function append_list_items(list) {
   const list_items_list = document.getElementById("list_items")
   const now = new Date(Date.now())
   list.list_items.forEach((list_item) => {
-    const list_item_element = document.createElement("li")
-    const div = document.createElement("div")
-    const list_item_name = document.createElement("h4")
+    const clone = document.importNode(document.getElementById("list_item_template").content, true)
+
+    const list_item_name = clone.querySelector("h4")
     list_item_name.innerText = list_item.name
-    div.appendChild(list_item_name)
-    const list_item_subtext = document.createElement("p")
+
+    const list_item_subtext = clone.querySelector("p")
     const added_on = new Date(Date.parse(list_item.added_on))
     if (added_on.toDateString() == now.toDateString()) {
       list_item_subtext.innerText = `Added by ${list_item.added_by} at ${new String(added_on.getHours()).padStart(2, 0)}:${new String(added_on.getMinutes()).padStart(2, 0)}`
     } else {
       list_item_subtext.innerText = `Added by ${list_item.added_by} on ${added_on.getDay()}/${added_on.getMonth()}`
     }
-    div.appendChild(list_item_subtext)
-    const list_item_checkbox = document.createElement("button")
+
+    const list_item_checkbox = clone.querySelector("button")
     list_item_checkbox.dataset["list_item_id"] = list_item.id
-    list_item_checkbox.classList.add("check-button")
-    list_item_checkbox.classList.add("hover")
     if (list_item.checked) {
       list_item_checkbox.classList.add("checked")
     }
     list_item_checkbox.addEventListener("click", toggle_list_item_check)
-    list_item_element.appendChild(list_item_checkbox)
-    list_item_element.appendChild(div)
-    list_items_list.appendChild(list_item_element)
+    list_items_list.appendChild(clone)
   })
 }
 

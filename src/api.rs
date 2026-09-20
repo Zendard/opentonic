@@ -313,8 +313,6 @@ pub async fn delete_list_item(
         .map_err(|_| StatusCode::BAD_REQUEST)?;
     let list_item_id: i64 = list_item_id.parse().map_err(|_| StatusCode::BAD_REQUEST)?;
 
-    // Check if user has access to list
-
     sqlx::query!(
         "SELECT user FROM List_Accesses WHERE user=? AND list_id=(SELECT list_id FROM ListItems WHERE id=?)",
         user,

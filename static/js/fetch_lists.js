@@ -11,17 +11,16 @@ async function main() {
   const lists_parent = document.getElementById("lists")
   const lists = await fetch_lists()
   lists.forEach((list) => {
-    const element = document.createElement("li")
-    const name_element = document.createElement("a")
+    const clone = document.importNode(document.getElementById("list_template").content, true)
+
+    const name_element = clone.querySelector("a")
     name_element.innerText = list.name
     name_element.href = `${url_pfx}/list/${list.id}`
-    const owner_element = document.createElement("p")
+
+    const owner_element = clone.querySelector("p")
     owner_element.innerText = list.owner
 
-    element.appendChild(name_element)
-    element.appendChild(owner_element)
-
-    lists_parent.appendChild(element)
+    lists_parent.appendChild(clone)
   })
 }
 

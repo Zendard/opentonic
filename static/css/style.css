@@ -59,7 +59,7 @@ ul.cards {
     margin-bottom: 0.5rem;
     display: flex;
     justify-content: start;
-    align-items: end;
+    align-items: center;
     gap: 1rem;
 
     &>a,
@@ -83,8 +83,11 @@ ul.cards {
       border-radius: var(--br);
       font-weight: 700;
       font-size: 1.5rem;
-      min-width: 3rem;
-      min-height: 3rem;
+      width: 3rem;
+      height: 3rem;
+      display: flex;
+      justify-content: center;
+      align-items: center;
 
       &::after {
         content: "";
@@ -126,6 +129,7 @@ ul.chips {
   display: flex;
   list-style: none;
   padding: 0px;
+  margin: 0px;
   gap: 1rem;
 
   &>li {
@@ -147,4 +151,12 @@ ul.chips {
       margin: 0px;
     }
   }
+}
+
+button#add-user {
+  max-height: 2rem;
+}
+
+input {
+  height: 2rem;
 }

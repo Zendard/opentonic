@@ -4,25 +4,21 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
-  <title>Opentonic</title>
+  <title></title>
   <link href="{url_pfx}/static/css/style.css" rel="stylesheet">
 </head>
 
 <body>
-  <h1>Opentonic</h1>
-  <a href="create-list" class="button hover accent">Create list</a>
-  <ul id="lists" class="cards">
-    <template id="list_template">
-      <li>
-        <a></a>
-        <p></p>
-      </li>
-    </template>
-  </ul>
-
+  <h1>Add user to list</h1>
+  <form id="form" method="dialog">
+    <label for="user">User:</label>
+    <input type="text" name="user">
+    <button>Add user</button>
+  </form>
   <div id="user" class="data">{user}</div>
   <div id="url_pfx" class="data">{url_pfx}</div>
-  <script src="{url_pfx}/static/js/fetch_lists.js"></script>
+  <div id="list_id" class="data">{list_id}</div>
+  <script src="{url_pfx}/static/js/add-user-to-list.js"></script>
 </body>
 
 </html>
