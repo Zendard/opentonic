@@ -257,7 +257,7 @@ pub async fn check_list_item(
 pub struct AddUserToList {
     user: String,
 }
-#[axum::debug_handler]
+
 pub async fn add_user_to_list(
     headers: HeaderMap,
     extract::Path(list_id): extract::Path<String>,
@@ -299,4 +299,39 @@ pub async fn add_user_to_list(
     .map_err(|_| StatusCode::INTERNAL_SERVER_ERROR)?;
 
     Ok(Json(body.user.to_string()))
+}
+
+pub async fn delete_list_item(
+    headers: HeaderMap,
+    extract::Path(list_item_id): extract::Path<String>,
+    State(state): State<Arc<ServerState>>,
+) -> Result<Json<i64>, StatusCode> {
+    let user = headers
+        .get("X-Forwarded-User")
+        .ok_or(StatusCode::UNAUTHORIZED)?
+        .to_str()
+        .map_err(|_| StatusCode::BAD_REQUEST)?;
+    let list_item_id: i64 = list_item_id.parse().map_err(|_| StatusCode::BAD_REQUEST)?;
+
+    // Check if user has access to list
+
+    sqlx::query!(
+        "SELECT user FROM List_Accesses WHERE user=? AND list_id=(SELECT list_id FROM ListItems WHERE id=?)",
+        user,
+        list_item_id
+    ).fetch_optional(&state.db_conn)
+        .await
+        .map_err(|_| StatusCode::INTERNAL_SERVER_ERROR)?
+        .ok_or(StatusCode::UNAUTHORIZED)?;
+
+    let deleted_id = sqlx::query!(
+        "DELETE FROM ListItems WHERE id=? RETURNING id",
+        list_item_id
+    )
+    .fetch_one(&state.db_conn)
+    .await
+    .map_err(|_| StatusCode::INTERNAL_SERVER_ERROR)?
+    .id;
+
+    Ok(Json(deleted_id))
 }
