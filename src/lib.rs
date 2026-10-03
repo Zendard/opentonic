@@ -66,6 +66,10 @@ pub async fn run_server(config: Config) {
             &(url_pfx.clone() + "/api/delete-list-item/{list_item_id}"),
             post(api::delete_list_item),
         )
+        .route(
+            &(url_pfx.clone() + "/api/delete-list/{list_id}"),
+            post(api::delete_list),
+        )
         .route(&(url_pfx.clone() + "/{path}"), get(serve_html))
         .with_state(server_state);
 
