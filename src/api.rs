@@ -344,7 +344,7 @@ pub async fn delete_list(
         .ok_or(StatusCode::UNAUTHORIZED)?
         .to_str()
         .map_err(|_| StatusCode::BAD_REQUEST)?;
-    let list_item_id: i64 = list_item_id.parse().map_err(|_| StatusCode::BAD_REQUEST)?;
+    let list_id: i64 = list_id.parse().map_err(|_| StatusCode::BAD_REQUEST)?;
 
     sqlx::query!(
         "SELECT owner FROM Lists WHERE owner=? AND id=?",
