@@ -1,7 +1,7 @@
 use crate::ServerState;
 use axum::{
     Json,
-    extract::{self, State},
+    extract::{self, Query, State},
     http::{HeaderMap, StatusCode},
 };
 use serde::{Deserialize, Serialize};
@@ -182,10 +182,11 @@ pub async fn add_list_item(
     } else {
         sqlx::query!(
             "
-            INSERT INTO Products(name) VALUES (?);
+            INSERT INTO Products(name,list_id) VALUES (?,?);
             SELECT id FROM Products WHERE id==last_insert_rowid();
             ",
-            body.name
+            body.name,
+            list_id
         )
         .fetch_one(&state.db_conn)
         .await
@@ -254,16 +255,18 @@ pub async fn check_list_item(
 }
 
 #[derive(Deserialize)]
-pub struct AddUserToList {
-    user: String,
+pub struct UpdateList {
+    name: Option<String>,
+    users: Option<Vec<String>>,
+    delete_users: Option<Vec<String>>,
 }
 
-pub async fn add_user_to_list(
+pub async fn update_list(
     headers: HeaderMap,
     extract::Path(list_id): extract::Path<String>,
     State(state): State<Arc<ServerState>>,
-    Json(body): Json<AddUserToList>,
-) -> Result<Json<String>, StatusCode> {
+    Json(body): Json<UpdateList>,
+) -> Result<(), StatusCode> {
     let user = headers
         .get("X-Forwarded-User")
         .ok_or(StatusCode::UNAUTHORIZED)?
@@ -287,18 +290,49 @@ pub async fn add_user_to_list(
         return Err(StatusCode::UNAUTHORIZED);
     }
 
-    sqlx::query!(
-        "
+    if let Some(name) = body.name {
+        sqlx::query!(
+            "
+            UPDATE Lists SET name=? WHERE id=?;
+            ",
+            name,
+            list_id
+        )
+        .execute(&state.db_conn)
+        .await
+        .map_err(|_| StatusCode::INTERNAL_SERVER_ERROR)?;
+    }
+
+    if let Some(users) = body.users {
+        for user in users {
+            sqlx::query!(
+                "
         INSERT INTO List_Accesses(list_id,user) VALUES (?,?) ON CONFLICT DO NOTHING;
         ",
-        list_id,
-        body.user
-    )
-    .execute(&state.db_conn)
-    .await
-    .map_err(|_| StatusCode::INTERNAL_SERVER_ERROR)?;
+                list_id,
+                user
+            )
+            .execute(&state.db_conn)
+            .await
+            .map_err(|_| StatusCode::INTERNAL_SERVER_ERROR)?;
+        }
+    }
 
-    Ok(Json(body.user.to_string()))
+    if let Some(delete_users) = body.delete_users {
+        for user in delete_users {
+            sqlx::query!(
+                "
+        DELETE FROM List_Accesses WHERE list_id=? AND user=?
+        ",
+                list_id,
+                user
+            )
+            .execute(&state.db_conn)
+            .await
+            .map_err(|_| StatusCode::INTERNAL_SERVER_ERROR)?;
+        }
+    }
+    Ok(())
 }
 
 pub async fn delete_list_item(
@@ -364,4 +398,55 @@ pub async fn delete_list(
         .ok_or(StatusCode::INTERNAL_SERVER_ERROR)?;
 
     Ok(Json(deleted_id))
+}
+
+#[derive(Serialize)]
+pub struct Product {
+    name: String,
+    category_name: Option<String>,
+}
+
+#[derive(Deserialize)]
+pub struct ProductQuery {
+    prompt: String,
+}
+
+#[axum::debug_handler]
+pub async fn query_products(
+    headers: HeaderMap,
+    extract::Path(list_id): extract::Path<String>,
+    State(state): State<Arc<ServerState>>,
+    Query(query): Query<ProductQuery>,
+) -> Result<Json<Vec<Product>>, StatusCode> {
+    let user = headers
+        .get("X-Forwarded-User")
+        .ok_or(StatusCode::UNAUTHORIZED)?
+        .to_str()
+        .map_err(|_| StatusCode::BAD_REQUEST)?;
+    let list_id: i64 = list_id.parse().map_err(|_| StatusCode::BAD_REQUEST)?;
+
+    sqlx::query!(
+        "SELECT user FROM List_Accesses WHERE user=? AND list_id=?",
+        user,
+        list_id
+    )
+    .fetch_optional(&state.db_conn)
+    .await
+    .map_err(|_| StatusCode::INTERNAL_SERVER_ERROR)?
+    .ok_or(StatusCode::UNAUTHORIZED)?;
+
+    let products = sqlx::query_as!(
+        Product,
+        "
+        SELECT p.name as name,c.name as category_name FROM Products p
+        JOIN Categories c ON p.category_id=c.id WHERE p.name LIKE concat('%',?,'%') AND p.list_id=?;
+        ",
+        query.prompt,
+        list_id
+    )
+    .fetch_all(&state.db_conn)
+    .await
+    .map_err(|_| StatusCode::INTERNAL_SERVER_ERROR)?;
+
+    Ok(Json(products))
 }

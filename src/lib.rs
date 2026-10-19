@@ -3,7 +3,7 @@ use axum::{
     extract::{self, State},
     http::{HeaderMap, StatusCode},
     response::{Html, IntoResponse, Response},
-    routing::{get, post},
+    routing::{get, post, put},
 };
 use sqlx::{Pool, Sqlite};
 use std::{fs, sync::Arc};
@@ -59,8 +59,8 @@ pub async fn run_server(config: Config) {
             post(api::check_list_item),
         )
         .route(
-            &(url_pfx.clone() + "/api/add-user-to-list/{list_id}"),
-            post(api::add_user_to_list),
+            &(url_pfx.clone() + "/api/list/{list_id}"),
+            put(api::update_list),
         )
         .route(
             &(url_pfx.clone() + "/api/delete-list-item/{list_item_id}"),
@@ -69,6 +69,10 @@ pub async fn run_server(config: Config) {
         .route(
             &(url_pfx.clone() + "/api/delete-list/{list_id}"),
             post(api::delete_list),
+        )
+        .route(
+            &(url_pfx.clone() + "/api/list/{list_id}/products"),
+            get(api::query_products),
         )
         .route(&(url_pfx.clone() + "/{path}"), get(serve_html))
         .with_state(server_state);
@@ -101,11 +105,14 @@ async fn init_db(db: &Pool<Sqlite>) {
             icon BLOB,
             order_index INTEGER DEFAULT id
         );
+        INSERT INTO Categories(name) VALUES ('Uncategorized');
         CREATE TABLE IF NOT EXISTS Products(
             id INTEGER PRIMARY KEY AUTOINCREMENT,
             name TEXT NOT NULL, 
-            category_id INTEGER,
+            category_id INTEGER DEFAULT 1,
+            list_id INTEGER,
             FOREIGN KEY(category_id) REFERENCES Categories(id)
+            FOREIGN KEY(list_id) REFERENCES Lists(id)
         );
         CREATE TABLE IF NOT EXISTS ListItems(
             id INTEGER PRIMARY KEY AUTOINCREMENT,
