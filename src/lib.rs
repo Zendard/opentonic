@@ -3,7 +3,7 @@ use axum::{
     extract::{self, State},
     http::{HeaderMap, StatusCode},
     response::{Html, IntoResponse, Response},
-    routing::{get, post},
+    routing::{delete, get, post, put},
 };
 use sqlx::{Pool, Sqlite};
 use std::{fs, sync::Arc};
@@ -36,39 +36,49 @@ pub async fn run_server(config: Config) {
         .route(&(url_pfx.clone() + "/"), get(index_page))
         .route(&(url_pfx.clone() + "/static/css/{path}"), get(serve_css))
         .route(&(url_pfx.clone() + "/static/js/{path}"), get(serve_js))
-        .route(&(url_pfx.clone() + "/api/lists"), get(api::get_lists))
         .route(
-            &(url_pfx.clone() + "/api/create-list"),
-            post(api::create_list),
+            &(url_pfx.clone() + "/api/lists"),
+            get(api::lists::get_lists),
         )
         .route(
-            &(url_pfx.clone() + "/api/list/{list_id}"),
-            get(api::fetch_list),
-        )
-        .route(&(url_pfx.clone() + "/list/{list_id}"), get(fetch_list))
-        .route(
-            &(url_pfx.clone() + "/add-user-to-list/{list_id}"),
-            get(add_user_to_list),
+            &(url_pfx.clone() + "/api/lists"),
+            post(api::lists::create_list),
         )
         .route(
-            &(url_pfx.clone() + "/api/add-list-item/{list_id}"),
-            post(api::add_list_item),
+            &(url_pfx.clone() + "/api/lists/{list_id}"),
+            get(api::lists::get_list),
         )
         .route(
-            &(url_pfx.clone() + "/api/check-list-item/{list_item_id}"),
-            post(api::check_list_item),
+            &(url_pfx.clone() + "/api/lists/{list_id}"),
+            put(api::lists::update_list),
         )
         .route(
-            &(url_pfx.clone() + "/api/add-user-to-list/{list_id}"),
-            post(api::add_user_to_list),
+            &(url_pfx.clone() + "/api/lists/{list_id}"),
+            delete(api::lists::delete_list),
         )
         .route(
-            &(url_pfx.clone() + "/api/delete-list-item/{list_item_id}"),
-            post(api::delete_list_item),
+            &(url_pfx.clone() + "/api/lists/{list_id}/items"),
+            get(api::list_items::get_list_items),
         )
         .route(
-            &(url_pfx.clone() + "/api/delete-list/{list_id}"),
-            post(api::delete_list),
+            &(url_pfx.clone() + "/api/lists/{list_id}/items"),
+            post(api::list_items::create_list_item),
+        )
+        .route(
+            &(url_pfx.clone() + "/api/lists/{list_id}/items/{list_item_id}"),
+            get(api::list_items::get_list_item),
+        )
+        .route(
+            &(url_pfx.clone() + "/api/lists/{list_id}/items/{list_item_id}"),
+            put(api::list_items::update_list_item),
+        )
+        .route(
+            &(url_pfx.clone() + "/api/lists/{list_id}/items/{list_item_id}"),
+            delete(api::list_items::delete_list_item),
+        )
+        .route(
+            &(url_pfx.clone() + "/api/lists/{list_id}/products"),
+            get(api::products::query_products),
         )
         .route(&(url_pfx.clone() + "/{path}"), get(serve_html))
         .with_state(server_state);
@@ -101,11 +111,14 @@ async fn init_db(db: &Pool<Sqlite>) {
             icon BLOB,
             order_index INTEGER DEFAULT id
         );
+        INSERT INTO Categories(name) VALUES ('Uncategorized');
         CREATE TABLE IF NOT EXISTS Products(
             id INTEGER PRIMARY KEY AUTOINCREMENT,
             name TEXT NOT NULL, 
-            category_id INTEGER,
+            category_id INTEGER DEFAULT 1,
+            list_id INTEGER,
             FOREIGN KEY(category_id) REFERENCES Categories(id)
+            FOREIGN KEY(list_id) REFERENCES Lists(id)
         );
         CREATE TABLE IF NOT EXISTS ListItems(
             id INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -154,50 +167,6 @@ async fn serve_html(
     let html_str = fs::read_to_string(full_path).map_err(|_| StatusCode::NOT_FOUND)?;
     let html_str = html_str.replace("{user}", user);
     let html_str = html_str.replace("{url_pfx}", &state.config.url_prefix);
-    Ok(Html(html_str))
-}
-
-async fn fetch_list(
-    headers: HeaderMap,
-    State(state): State<Arc<ServerState>>,
-    extract::Path(list_id): extract::Path<String>,
-) -> Result<Html<String>, StatusCode> {
-    list_id
-        .parse::<i64>()
-        .map_err(|_| StatusCode::BAD_REQUEST)?;
-    let user = headers
-        .get("X-Forwarded-User")
-        .ok_or(StatusCode::UNAUTHORIZED)?
-        .to_str()
-        .map_err(|_| StatusCode::BAD_REQUEST)?;
-
-    let full_path = state.config.html_dir.join("list.html");
-    let html_str = fs::read_to_string(full_path).map_err(|_| StatusCode::NOT_FOUND)?;
-    let html_str = html_str.replace("{user}", user);
-    let html_str = html_str.replace("{url_pfx}", &state.config.url_prefix);
-    let html_str = html_str.replace("{list_id}", &list_id);
-    Ok(Html(html_str))
-}
-
-async fn add_user_to_list(
-    headers: HeaderMap,
-    State(state): State<Arc<ServerState>>,
-    extract::Path(list_id): extract::Path<String>,
-) -> Result<Html<String>, StatusCode> {
-    list_id
-        .parse::<i64>()
-        .map_err(|_| StatusCode::BAD_REQUEST)?;
-    let user = headers
-        .get("X-Forwarded-User")
-        .ok_or(StatusCode::UNAUTHORIZED)?
-        .to_str()
-        .map_err(|_| StatusCode::BAD_REQUEST)?;
-
-    let full_path = state.config.html_dir.join("add-user-to-list.html");
-    let html_str = fs::read_to_string(full_path).map_err(|_| StatusCode::NOT_FOUND)?;
-    let html_str = html_str.replace("{user}", user);
-    let html_str = html_str.replace("{url_pfx}", &state.config.url_prefix);
-    let html_str = html_str.replace("{list_id}", &list_id);
     Ok(Html(html_str))
 }
 
