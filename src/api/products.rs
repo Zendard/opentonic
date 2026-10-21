@@ -1,11 +1,11 @@
 use crate::ServerState;
 use axum::{
     Json,
-    extract::{self, Query, State},
+    extract::{self, State},
     http::{HeaderMap, StatusCode},
 };
 use serde::{Deserialize, Serialize};
-use std::{collections::HashSet, sync::Arc};
+use std::sync::Arc;
 
 #[derive(Serialize)]
 pub struct Product {
@@ -14,16 +14,16 @@ pub struct Product {
 }
 
 #[derive(Deserialize)]
-pub struct ProductQuery {
-    prompt: String,
+pub struct QueryProducts {
+    q: String,
 }
 
 #[axum::debug_handler]
 pub async fn query_products(
     headers: HeaderMap,
     extract::Path(list_id): extract::Path<String>,
+    query: extract::Query<QueryProducts>,
     State(state): State<Arc<ServerState>>,
-    Query(query): Query<ProductQuery>,
 ) -> Result<Json<Vec<Product>>, StatusCode> {
     let user = headers
         .get("X-Forwarded-User")
@@ -48,7 +48,7 @@ pub async fn query_products(
         SELECT p.name as name,c.name as category_name FROM Products p
         JOIN Categories c ON p.category_id=c.id WHERE p.name LIKE concat('%',?,'%') AND p.list_id=?;
         ",
-        query.prompt,
+        query.q,
         list_id
     )
     .fetch_all(&state.db_conn)

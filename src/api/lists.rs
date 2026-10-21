@@ -1,17 +1,20 @@
 use crate::ServerState;
 use axum::{
     Json,
-    extract::{self, Query, State},
+    extract::{self, State},
     http::{HeaderMap, StatusCode},
 };
 use serde::{Deserialize, Serialize};
-use std::{collections::HashSet, sync::Arc};
+use sqlx::prelude::FromRow;
+use sqlx::types::Json as SqlxJson;
+use std::sync::Arc;
 
-#[derive(Serialize)]
+#[derive(Serialize, FromRow)]
 pub struct List {
     id: i64,
     name: String,
     owner: String,
+    users: SqlxJson<Vec<String>>,
 }
 
 pub async fn get_lists(
@@ -24,147 +27,103 @@ pub async fn get_lists(
         .to_str()
         .map_err(|_| StatusCode::BAD_REQUEST)?;
 
-    let names = sqlx::query_as!(
+    let lists: Vec<List> = sqlx::query_as!(
         List,
-        "
-         SELECT id,name,owner FROM Lists l 
-         JOIN List_Accesses la ON la.list_id = l.id
+        r#"
+         SELECT id,name,owner,json_group_array(la2.user) as "users!: SqlxJson<Vec<String>>" FROM Lists l 
+         LEFT JOIN List_Accesses la ON la.list_id = l.id
+         LEFT JOIN List_Accesses la2 ON la.list_id = l.id
          WHERE la.user = ?
-         GROUP BY l.id
-     ",
+         GROUP BY l.id;
+     "#,
         user
     )
     .fetch_all(&state.db_conn)
     .await
     .map_err(|_| StatusCode::INTERNAL_SERVER_ERROR)?;
-    Ok(Json(names))
+    Ok(Json(lists))
 }
 
 #[derive(Deserialize)]
-pub struct CreateList {
+pub struct CreateListReq {
     name: String,
 }
-#[derive(Serialize)]
-pub struct CreateListOutput {
-    id: i64,
-    name: String,
-}
+
 pub async fn create_list(
     headers: HeaderMap,
     State(state): State<Arc<ServerState>>,
-    Json(body): Json<CreateList>,
-) -> Result<Json<CreateListOutput>, StatusCode> {
+    Json(body): Json<CreateListReq>,
+) -> Result<Json<List>, StatusCode> {
     let user = headers
         .get("X-Forwarded-User")
         .ok_or(StatusCode::UNAUTHORIZED)?
         .to_str()
         .map_err(|_| StatusCode::BAD_REQUEST)?;
-    let name = body.name;
-    sqlx::query!(
-        "
+
+    let list=sqlx::query_as!(
+        List,
+        r#" 
         INSERT INTO Lists(name,owner) VALUES (?,?);
+
         INSERT INTO List_Accesses(list_id,user) VALUES (last_insert_rowid(),?);
-        SELECT * FROM List_Accesses la JOIN Lists l ON la.list_id = l.id WHERE la.rowid==last_insert_rowid();
-        ",
-        name,user,user
+
+        SELECT id,name,owner,json_group_array(la.user) as "users!: SqlxJson<Vec<String>>" FROM Lists l 
+        LEFT JOIN List_Accesses la ON la.list_id = l.id
+        WHERE l.id = (SELECT list_id FROM List_Accesses WHERE rowid=last_insert_rowid())
+        GROUP BY l.id;
+        "#,
+        body.name,user,user
     )
     .fetch_one(&state.db_conn)
     .await
-    .map(|rec| {
-        Json(CreateListOutput{
-            id: rec.id,
-            name: rec.name,
-
-        })
-    })
-    .map_err(|_| StatusCode::INTERNAL_SERVER_ERROR)
+    .map_err(|_| StatusCode::INTERNAL_SERVER_ERROR)?;
+    Ok(Json(list))
 }
 
-#[derive(Serialize)]
-pub struct FetchList {
-    name: String,
-    owner: String,
-    users: HashSet<String>,
-    list_items: Vec<ListItem>,
-}
-
-#[derive(Serialize, Debug)]
-pub struct ListItem {
-    id: i64,
-    name: String,
-    checked: bool,
-    category: Option<String>,
-    added_by: String,
-    added_on: Option<String>,
-}
-
-pub async fn fetch_list(
+pub async fn get_list(
     headers: HeaderMap,
     State(state): State<Arc<ServerState>>,
     extract::Path(list_id): extract::Path<String>,
-) -> Result<Json<FetchList>, StatusCode> {
+) -> Result<Json<List>, StatusCode> {
     let user = headers
         .get("X-Forwarded-User")
         .ok_or(StatusCode::UNAUTHORIZED)?
         .to_str()
         .map_err(|_| StatusCode::BAD_REQUEST)?;
 
-    let items = sqlx::query_as!(
-        ListItem,
-        "
-        SELECT li.id,p.name as name,c.name as category,added_by,datetime(added_on) as added_on,checked FROM ListItems li
-        JOIN Products p ON p.id = li.product_id
-        LEFT JOIN Categories c ON c.id = p.category_id 
-        WHERE li.list_id = ?;
-        ",list_id
-    )
-    .fetch_all(&state.db_conn)
-    .await
-    .map_err(|_| StatusCode::INTERNAL_SERVER_ERROR)?;
-
-    let list = sqlx::query!(
-        "
-        SELECT l.name,l.owner,GROUP_CONCAT(la.user) AS users FROM Lists l
-        JOIN List_Accesses la ON la.list_id == l.id WHERE l.id=?;
-        ",
+    let list = sqlx::query_as!(
+        List,
+        r#"
+         SELECT id,name,owner,json_group_array(la.user) as "users!: SqlxJson<Vec<String>>" FROM Lists l 
+         LEFT JOIN List_Accesses la ON la.list_id = l.id
+         WHERE l.id=?
+         GROUP BY l.id;
+        "#,
         list_id
     )
     .fetch_one(&state.db_conn)
     .await
     .map_err(|_| StatusCode::INTERNAL_SERVER_ERROR)?;
 
-    let users_set: HashSet<String> = list
-        .users
-        .unwrap()
-        .split(",")
-        .map(|str| str.to_string())
-        .collect();
-
-    if !users_set.contains(user) {
+    if !list.users.contains(&user.to_string()) {
         return Err(StatusCode::UNAUTHORIZED);
     }
 
-    Ok(Json(FetchList {
-        name: list.name.unwrap(),
-        owner: list.owner.unwrap(),
-        users: users_set,
-        list_items: items,
-    }))
+    Ok(Json(list))
 }
 
 #[derive(Deserialize)]
-pub struct UpdateList {
+pub struct UpdateListReq {
     name: Option<String>,
     users: Option<Vec<String>>,
-    delete_users: Option<Vec<String>>,
 }
 
 pub async fn update_list(
     headers: HeaderMap,
     extract::Path(list_id): extract::Path<String>,
     State(state): State<Arc<ServerState>>,
-    Json(body): Json<UpdateList>,
-) -> Result<(), StatusCode> {
+    Json(body): Json<UpdateListReq>,
+) -> Result<Json<List>, StatusCode> {
     let user = headers
         .get("X-Forwarded-User")
         .ok_or(StatusCode::UNAUTHORIZED)?
@@ -202,11 +161,22 @@ pub async fn update_list(
     }
 
     if let Some(users) = body.users {
+        sqlx::query!(
+            "
+                BEGIN TRANSACTION;
+                DELETE FROM List_Accesses WHERE list_id=?
+            ",
+            list_id
+        )
+        .execute(&state.db_conn)
+        .await
+        .map_err(|_| StatusCode::INTERNAL_SERVER_ERROR)?;
+
         for user in users {
             sqlx::query!(
                 "
-        INSERT INTO List_Accesses(list_id,user) VALUES (?,?) ON CONFLICT DO NOTHING;
-        ",
+                INSERT INTO List_Accesses(list_id,user) VALUES (?,?) ON CONFLICT DO NOTHING;
+                ",
                 list_id,
                 user
             )
@@ -214,23 +184,28 @@ pub async fn update_list(
             .await
             .map_err(|_| StatusCode::INTERNAL_SERVER_ERROR)?;
         }
+
+        sqlx::query!("COMMIT TRANSACTION;")
+            .execute(&state.db_conn)
+            .await
+            .map_err(|_| StatusCode::INTERNAL_SERVER_ERROR)?;
     }
 
-    if let Some(delete_users) = body.delete_users {
-        for user in delete_users {
-            sqlx::query!(
-                "
-        DELETE FROM List_Accesses WHERE list_id=? AND user=?
-        ",
-                list_id,
-                user
-            )
-            .execute(&state.db_conn)
-            .await
-            .map_err(|_| StatusCode::INTERNAL_SERVER_ERROR)?;
-        }
-    }
-    Ok(())
+    let list = sqlx::query_as!(
+        List,
+        r#"
+         SELECT id,name,owner,json_group_array(la.user) as "users!: SqlxJson<Vec<String>>" FROM Lists l 
+         LEFT JOIN List_Accesses la ON la.list_id = l.id
+         WHERE l.id=?
+         GROUP BY l.id;
+        "#,
+        list_id
+    )
+    .fetch_one(&state.db_conn)
+    .await
+    .map_err(|_| StatusCode::INTERNAL_SERVER_ERROR)?;
+
+    Ok(Json(list))
 }
 
 pub async fn delete_list(

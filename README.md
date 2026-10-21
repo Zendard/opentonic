@@ -65,6 +65,6 @@ OpenTonic provides a REST api at `/api/{resource}`
 |`/lists/{list_id}/items`|`GET`| - |Get the list items of a list|
 |`/lists/{list_id}/items`|`POST`| JSON with `name:String` |Add a list item to a list|
 |`/lists/{list_id}/items/{list_item_id}`|`GET`| - |Get a list item|
-|`/lists/{list_id}/items/{list_item_id}`|`PUT`| JSON with `name:String` and/or `checked:bool` |Update a list item|
+|`/lists/{list_id}/items/{list_item_id}`|`PUT`| JSON with `checked:bool`|Update a list item|
 |`/lists/{list_id}/items/{list_item_id}`|`DELETE`| - |Delete a list item|
 |`/lists/{list_id}/products?q={query}`|`GET`| - |Query all products from a list|
