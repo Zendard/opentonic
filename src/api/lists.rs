@@ -101,9 +101,9 @@ pub async fn get_list(
         "#,
         list_id
     )
-    .fetch_one(&state.db_conn)
+    .fetch_optional(&state.db_conn)
     .await
-    .map_err(|_| StatusCode::INTERNAL_SERVER_ERROR)?;
+    .map_err(|_| StatusCode::INTERNAL_SERVER_ERROR)?.ok_or(StatusCode::NOT_FOUND)?;
 
     if !list.users.contains(&user.to_string()) {
         return Err(StatusCode::UNAUTHORIZED);
@@ -160,10 +160,14 @@ pub async fn update_list(
         .map_err(|_| StatusCode::INTERNAL_SERVER_ERROR)?;
     }
 
-    if let Some(users) = body.users {
+    if let Some(mut users) = body.users {
+        // Make sure the owner always has access
+        if !users.contains(&owner) {
+            users.push(owner);
+        }
+
         sqlx::query!(
             "
-                BEGIN TRANSACTION;
                 DELETE FROM List_Accesses WHERE list_id=?
             ",
             list_id
@@ -184,11 +188,6 @@ pub async fn update_list(
             .await
             .map_err(|_| StatusCode::INTERNAL_SERVER_ERROR)?;
         }
-
-        sqlx::query!("COMMIT TRANSACTION;")
-            .execute(&state.db_conn)
-            .await
-            .map_err(|_| StatusCode::INTERNAL_SERVER_ERROR)?;
     }
 
     let list = sqlx::query_as!(
@@ -230,12 +229,19 @@ pub async fn delete_list(
     .map_err(|_| StatusCode::INTERNAL_SERVER_ERROR)?
     .ok_or(StatusCode::UNAUTHORIZED)?;
 
-    let deleted_id = sqlx::query!("DELETE FROM Lists WHERE id=? RETURNING id", list_id)
-        .fetch_one(&state.db_conn)
-        .await
-        .map_err(|_| StatusCode::INTERNAL_SERVER_ERROR)?
-        .id
-        .ok_or(StatusCode::INTERNAL_SERVER_ERROR)?;
+    let deleted_id = sqlx::query!(
+        "
+        DELETE FROM List_Accesses WHERE list_id=?;
+        DELETE FROM Lists WHERE id=? RETURNING id;
+        ",
+        list_id,
+        list_id
+    )
+    .fetch_one(&state.db_conn)
+    .await
+    .map_err(|_| StatusCode::INTERNAL_SERVER_ERROR)?
+    .id
+    .ok_or(StatusCode::IM_A_TEAPOT)?;
 
     Ok(Json(deleted_id))
 }
