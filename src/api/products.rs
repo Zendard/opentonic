@@ -9,6 +9,7 @@ use std::sync::Arc;
 
 #[derive(Serialize)]
 pub struct Product {
+    id: i64,
     name: String,
     category_name: Option<String>,
 }
@@ -45,7 +46,7 @@ pub async fn query_products(
     let products = sqlx::query_as!(
         Product,
         "
-        SELECT p.name as name,c.name as category_name FROM Products p
+        SELECT p.id, p.name as name,c.name as category_name FROM Products p
         JOIN Categories c ON p.category_id=c.id WHERE p.name LIKE concat('%',?,'%') AND p.list_id=?;
         ",
         query.q,
