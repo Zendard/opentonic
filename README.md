@@ -53,3 +53,20 @@ http {
   }
 }
 ```
+
+## API
+OpenTonic provides a REST api at `/api/{resource}`
+
+|Resource|Method|Body|Description|
+|--------|------|----|-----------|
+|`/lists`|`GET` | -  |Get all lists that the current user has access to|
+|`/lists`|`POST`|JSON list with `name`|Create a new list|
+|`/lists/{list_id}`|`GET`| - |Get info on a list|
+|`/lists/{list_id}`|`PUT`|JSON with `name` and/or `users`|Change a list|
+|`/lists/{list_id}`|`DELETE`| - |Delete a list|
+|`/lists/{list_id}/items`|`GET`| - |Get the list items of a list|
+|`/lists/{list_id}/items`|`POST`| JSON with `name` |Add a list item to a list|
+|`/lists/{list_id}/items/{list_item_id}`|`GET`| - |Get a list item|
+|`/lists/{list_id}/items/{list_item_id}`|`PUT`| JSON with `name` and/or `checked` |Update a list item|
+|`/lists/{list_id}/items/{list_item_id}`|`DELETE`| - |Delete a list item|
+|`/lists/{list_id}/products?q={query}`|`GET`| - |Query all products from a list|
