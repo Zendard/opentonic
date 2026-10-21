@@ -8,7 +8,7 @@ The config is loaded from `/etc/opentonic/config.toml` unless specified otherwis
 
 |Value|Type|Default|Description|
 |-----|----|-------|-----------|
-|`host_address`|String|`127.0.0.1`|Address on which to host the web server, can be IPv4 or IPv6 (It is recommended to leave this as the default to not expose opentonic to the internet withouth a reverse proxy)|
+|`host_address`|String|`127.0.0.1`|Address on which to host the web server, can be IPv4 or IPv6 (**It is recommended to leave this as the default** to not expose opentonic to the internet withouth a reverse proxy)|
 |`host_port`|u16|`80`|Port on which to host the web server|
 |`html_dir`|String|`./html`|Path to the HTML files|
 |`static`|String|`./static`|Path to the static files|
