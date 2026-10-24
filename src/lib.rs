@@ -37,6 +37,10 @@ pub async fn run_server(config: Config) {
         .route(&(url_pfx.clone() + "/static/css/{path}"), get(serve_css))
         .route(&(url_pfx.clone() + "/static/js/{path}"), get(serve_js))
         .route(
+            &(url_pfx.clone() + "/static/icons/{path}"),
+            get(serve_icons),
+        )
+        .route(
             &(url_pfx.clone() + "/api/lists"),
             get(api::lists::get_lists),
         )
@@ -145,7 +149,6 @@ async fn init_db(db: &Pool<Sqlite>) {
             list_id INTEGER NOT NULL,
             FOREIGN KEY(list_id) REFERENCES Lists(id)
         );
-        INSERT INTO Categories(name) VALUES ('Uncategorized');
         CREATE TABLE IF NOT EXISTS Products(
             id INTEGER PRIMARY KEY AUTOINCREMENT,
             name TEXT NOT NULL, 
@@ -239,6 +242,26 @@ impl IntoResponse for Js {
     fn into_response(self) -> axum::response::Response {
         Response::builder()
             .header("Content-Type", "text/javascript; charset=utf-8")
+            .body(self.0.into())
+            .unwrap()
+    }
+}
+
+async fn serve_icons(
+    State(state): State<Arc<ServerState>>,
+    extract::Path(path): extract::Path<String>,
+) -> Result<Svg, StatusCode> {
+    let full_path = state.config.icons_dir.join(path + ".svg");
+    let svg_str = fs::read_to_string(full_path).map_err(|_| StatusCode::NOT_FOUND)?;
+    Ok(Svg(svg_str))
+}
+
+struct Svg(String);
+
+impl IntoResponse for Svg {
+    fn into_response(self) -> axum::response::Response {
+        Response::builder()
+            .header("Content-Type", "image/svg+xml")
             .body(self.0.into())
             .unwrap()
     }
