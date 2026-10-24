@@ -3,6 +3,7 @@ use serde::Deserialize;
 use std::{path::PathBuf, str::FromStr};
 
 #[derive(Deserialize, Debug)]
+#[serde(default)]
 pub struct Config {
     pub host_address: std::net::IpAddr,
     pub host_port: u16,
@@ -20,6 +21,7 @@ impl Config {
         let location = location.unwrap_or(DEFAULT_CONFIG_LOCATION);
         let string = std::fs::read_to_string(location).unwrap_or_default();
         let mut config: Config = toml::de::from_str(&string)?;
+
         // Remove trailing slash from url prefix
         config.url_prefix = config.url_prefix.trim_end_matches("/").to_string();
         // Add starting slash to url prefix
