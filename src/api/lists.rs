@@ -65,9 +65,9 @@ pub async fn create_list(
         r#" 
         INSERT INTO Lists(name,owner) VALUES (?,?);
 
-        INSERT INTO Categories(id,name) VALUES (1,"Uncategorized");
+        INSERT INTO Categories(id,name,list_id) VALUES (1,"Uncategorized",last_insert_rowid());
 
-        INSERT INTO List_Accesses(list_id,user) VALUES (last_insert_rowid(),?);
+        INSERT INTO List_Accesses(list_id,user) VALUES ((SELECT list_id FROM Categories WHERE id=last_insert_rowid()),?);
 
         SELECT id,name,owner,json_group_array(la.user) as "users!: SqlxJson<Vec<String>>" FROM Lists l 
         LEFT JOIN List_Accesses la ON la.list_id = l.id
