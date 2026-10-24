@@ -79,6 +79,6 @@ OpenTonic provides a REST api at `/api/{resource}`
 |`/lists/{list_id}/products/{product_id}`|`DELETE`| - |Delete a product|
 |`/lists/{list_id}/categories`|`GET`| - |Get the categories of a list|
 |`/lists/{list_id}/categories/{category_id}`|`GET`| - |Get a category|
-|`/lists/{list_id}/categories`|`POST`| JSON with `name:String`, `icon_id:Option<String>` and `order_index:Option<i64>` |Create a category|
+|`/lists/{list_id}/categories`|`POST`| JSON with `name:String` and `icon_id:Option<String>` |Create a category|
 |`/lists/{list_id}/categories/{category_id}`|`PUT`| JSON with `name:String` and/or `icon_id:Option<String>` and/or `order_index:Option<i64>` |Update a category|
 |`/lists/{list_id}/categories/{category_id}`|`DELETE`| - |Delete a category|

@@ -83,7 +83,6 @@ pub async fn get_category(
 pub struct CreateCategoryReq {
     name: String,
     icon_id: Option<String>,
-    order_index: Option<i64>,
 }
 pub async fn create_category(
     headers: HeaderMap,
@@ -104,7 +103,7 @@ pub async fn create_category(
     let category = sqlx::query_as!(
         Category,
         "
-        INSERT INTO Categories(list_id,name,icon_id,order_index) VALUES (?,?,?,?);
+        INSERT INTO Categories(list_id,name,icon_id) VALUES (?,?,?);
 
         SELECT id,name,order_index,icon_id FROM Categories
         WHERE list_id=? AND id=last_insert_rowid();
@@ -112,7 +111,6 @@ pub async fn create_category(
         list_id,
         body.name,
         body.icon_id,
-        body.order_index,
         list_id,
     )
     .fetch_one(&state.db_conn)
