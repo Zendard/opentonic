@@ -234,8 +234,14 @@ pub async fn delete_list(
     let deleted_id = sqlx::query!(
         "
         DELETE FROM List_Accesses WHERE list_id=?;
+        DELETE FROM ListItems WHERE list_id=?;
+        DELETE FROM Products WHERE list_id=?;
+        DELETE FROM Categories WHERE list_id=?;
         DELETE FROM Lists WHERE id=? RETURNING id;
         ",
+        list_id,
+        list_id,
+        list_id,
         list_id,
         list_id
     )
@@ -243,7 +249,7 @@ pub async fn delete_list(
     .await
     .map_err(|_| StatusCode::INTERNAL_SERVER_ERROR)?
     .id
-    .ok_or(StatusCode::IM_A_TEAPOT)?;
+    .ok_or(StatusCode::NOT_FOUND)?;
 
     Ok(Json(deleted_id))
 }
