@@ -96,6 +96,10 @@ pub async fn run_server(config: Config) {
             &(url_pfx.clone() + "/api/lists/{list_id}/categories"),
             get(api::categories::get_categories),
         )
+        .route(
+            &(url_pfx.clone() + "/api/lists/{list_id}/categories/{category_id}"),
+            get(api::categories::get_category),
+        )
         .route(&(url_pfx.clone() + "/{path}"), get(serve_html))
         .with_state(server_state);
 
