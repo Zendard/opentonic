@@ -92,6 +92,10 @@ pub async fn run_server(config: Config) {
             &(url_pfx.clone() + "/api/lists/{list_id}/products/{product_id}"),
             delete(api::products::delete_product),
         )
+        .route(
+            &(url_pfx.clone() + "/api/lists/{list_id}/categories"),
+            get(api::categories::get_categories),
+        )
         .route(&(url_pfx.clone() + "/{path}"), get(serve_html))
         .with_state(server_state);
 
@@ -120,15 +124,17 @@ async fn init_db(db: &Pool<Sqlite>) {
         CREATE TABLE IF NOT EXISTS Categories(
             id INTEGER PRIMARY KEY AUTOINCREMENT,
             name TEXT NOT NULL,
-            icon BLOB,
-            order_index INTEGER DEFAULT id
+            icon_id TEXT,
+            order_index INTEGER DEFAULT id NOT NULL,
+            list_id INTEGER NOT NULL,
+            FOREIGN KEY(list_id) REFERENCES Lists(id)
         );
         INSERT INTO Categories(name) VALUES ('Uncategorized');
         CREATE TABLE IF NOT EXISTS Products(
             id INTEGER PRIMARY KEY AUTOINCREMENT,
             name TEXT NOT NULL, 
-            category_id INTEGER DEFAULT 1,
-            list_id INTEGER,
+            category_id INTEGER DEFAULT 1 NOT NULL,
+            list_id INTEGER NOT NULL,
             FOREIGN KEY(category_id) REFERENCES Categories(id)
             FOREIGN KEY(list_id) REFERENCES Lists(id)
         );
