@@ -120,3 +120,85 @@ pub async fn create_category(
     .map_err(|_| StatusCode::INTERNAL_SERVER_ERROR)?;
     Ok(Json(category))
 }
+
+#[derive(Debug, Deserialize)]
+pub struct UpdateCategoryReq {
+    name: Option<String>,
+    icon_id: Option<String>,
+    order_index: Option<i64>,
+}
+pub async fn update_category(
+    headers: HeaderMap,
+    extract::Path((list_id, category_id)): extract::Path<(String, String)>,
+    State(state): State<Arc<ServerState>>,
+    Json(body): Json<UpdateCategoryReq>,
+) -> Result<Json<Category>, StatusCode> {
+    if !has_access_to_list(
+        &state.db_conn,
+        list_id.parse().map_err(|_| StatusCode::BAD_REQUEST)?,
+        &headers,
+    )
+    .await
+    {
+        return Err(StatusCode::UNAUTHORIZED);
+    }
+
+    if let Some(name) = body.name {
+        sqlx::query!(
+            "
+            UPDATE Categories SET name=?
+            WHERE id=? AND list_id=?;
+            ",
+            name,
+            category_id,
+            list_id
+        )
+        .execute(&state.db_conn)
+        .await
+        .map_err(|_| StatusCode::INTERNAL_SERVER_ERROR)?;
+    }
+
+    if let Some(icon_id) = body.icon_id {
+        sqlx::query!(
+            "
+            UPDATE Categories SET icon_id=?
+            WHERE id=? AND list_id=?;
+            ",
+            icon_id,
+            category_id,
+            list_id
+        )
+        .execute(&state.db_conn)
+        .await
+        .map_err(|_| StatusCode::INTERNAL_SERVER_ERROR)?;
+    }
+
+    if let Some(order_index) = body.order_index {
+        sqlx::query!(
+            "
+            UPDATE Categories SET order_index=?
+            WHERE id=? AND list_id=?;
+            ",
+            order_index,
+            category_id,
+            list_id
+        )
+        .execute(&state.db_conn)
+        .await
+        .map_err(|_| StatusCode::INTERNAL_SERVER_ERROR)?;
+    }
+
+    let category = sqlx::query_as!(
+        Category,
+        "
+        SELECT id,name,order_index,icon_id FROM Categories
+        WHERE list_id=? AND id=?;
+        ",
+        list_id,
+        category_id
+    )
+    .fetch_one(&state.db_conn)
+    .await
+    .map_err(|_| StatusCode::INTERNAL_SERVER_ERROR)?;
+    Ok(Json(category))
+}

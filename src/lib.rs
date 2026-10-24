@@ -104,6 +104,10 @@ pub async fn run_server(config: Config) {
             &(url_pfx.clone() + "/api/lists/{list_id}/categories"),
             post(api::categories::create_category),
         )
+        .route(
+            &(url_pfx.clone() + "/api/lists/{list_id}/categories/{category_id}"),
+            put(api::categories::update_category),
+        )
         .route(&(url_pfx.clone() + "/{path}"), get(serve_html))
         .with_state(server_state);
 
