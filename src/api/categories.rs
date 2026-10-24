@@ -202,3 +202,35 @@ pub async fn update_category(
     .map_err(|_| StatusCode::INTERNAL_SERVER_ERROR)?;
     Ok(Json(category))
 }
+
+#[axum::debug_handler]
+pub async fn delete_category(
+    headers: HeaderMap,
+    extract::Path((list_id, category_id)): extract::Path<(String, String)>,
+    State(state): State<Arc<ServerState>>,
+) -> Result<Json<i64>, StatusCode> {
+    if !has_access_to_list(
+        &state.db_conn,
+        list_id.parse().map_err(|_| StatusCode::BAD_REQUEST)?,
+        &headers,
+    )
+    .await
+    {
+        return Err(StatusCode::UNAUTHORIZED);
+    }
+
+    let category_id = sqlx::query!(
+        "
+        DELETE FROM Categories WHERE id=? AND list_id=? RETURNING id;
+        ",
+        category_id,
+        list_id
+    )
+    .fetch_optional(&state.db_conn)
+    .await
+    .map_err(|_| StatusCode::INTERNAL_SERVER_ERROR)?
+    .ok_or(StatusCode::NOT_FOUND)?
+    .id;
+
+    Ok(Json(category_id))
+}
