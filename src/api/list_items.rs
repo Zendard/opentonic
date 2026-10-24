@@ -1,4 +1,4 @@
-use crate::ServerState;
+use crate::{ServerState, api::has_access_to_list};
 use axum::{
     Json,
     extract::{self, State},
@@ -17,34 +17,15 @@ pub struct ListItem {
     added_on: String,
 }
 
-async fn has_access_to_list(db_conn: &sqlx::SqlitePool, list_id: i64, user: &str) -> bool {
-    sqlx::query!(
-        "
-        SELECT rowid FROM List_Accesses WHERE list_id=? AND user=?;
-        ",
-        list_id,
-        user
-    )
-    .fetch_optional(db_conn)
-    .await
-    .is_ok_and(|i| i.is_some())
-}
-
 pub async fn get_list_items(
     headers: HeaderMap,
     extract::Path(list_id): extract::Path<String>,
     State(state): State<Arc<ServerState>>,
 ) -> Result<Json<Vec<ListItem>>, StatusCode> {
-    let user = headers
-        .get("X-Forwarded-User")
-        .ok_or(StatusCode::UNAUTHORIZED)?
-        .to_str()
-        .map_err(|_| StatusCode::BAD_REQUEST)?;
-
     if !has_access_to_list(
         &state.db_conn,
         list_id.parse().map_err(|_| StatusCode::BAD_REQUEST)?,
-        user,
+        &headers,
     )
     .await
     {
@@ -87,7 +68,7 @@ pub async fn create_list_item(
     if !has_access_to_list(
         &state.db_conn,
         list_id.parse().map_err(|_| StatusCode::BAD_REQUEST)?,
-        user,
+        &headers,
     )
     .await
     {
@@ -147,16 +128,10 @@ pub async fn get_list_item(
     extract::Path((list_id, list_item_id)): extract::Path<(String, String)>,
     State(state): State<Arc<ServerState>>,
 ) -> Result<Json<ListItem>, StatusCode> {
-    let user = headers
-        .get("X-Forwarded-User")
-        .ok_or(StatusCode::UNAUTHORIZED)?
-        .to_str()
-        .map_err(|_| StatusCode::BAD_REQUEST)?;
-
     if !has_access_to_list(
         &state.db_conn,
         list_id.parse().map_err(|_| StatusCode::BAD_REQUEST)?,
-        user,
+        &headers,
     )
     .await
     {
@@ -190,15 +165,10 @@ pub async fn update_list_item(
     State(state): State<Arc<ServerState>>,
     Json(body): Json<UpdateListItemReq>,
 ) -> Result<Json<ListItem>, StatusCode> {
-    let user = headers
-        .get("X-Forwarded-User")
-        .ok_or(StatusCode::UNAUTHORIZED)?
-        .to_str()
-        .map_err(|_| StatusCode::BAD_REQUEST)?;
     let list_id: i64 = list_id.parse().map_err(|_| StatusCode::BAD_REQUEST)?;
     let list_item_id: i64 = list_item_id.parse().map_err(|_| StatusCode::BAD_REQUEST)?;
 
-    if !has_access_to_list(&state.db_conn, list_id, user).await {
+    if !has_access_to_list(&state.db_conn, list_id, &headers).await {
         return Err(StatusCode::UNAUTHORIZED);
     }
 
@@ -230,21 +200,12 @@ pub async fn delete_list_item(
     extract::Path((list_id, list_item_id)): extract::Path<(String, String)>,
     State(state): State<Arc<ServerState>>,
 ) -> Result<Json<i64>, StatusCode> {
-    let user = headers
-        .get("X-Forwarded-User")
-        .ok_or(StatusCode::UNAUTHORIZED)?
-        .to_str()
-        .map_err(|_| StatusCode::BAD_REQUEST)?;
     let list_item_id: i64 = list_item_id.parse().map_err(|_| StatusCode::BAD_REQUEST)?;
+    let list_id: i64 = list_id.parse().map_err(|_| StatusCode::BAD_REQUEST)?;
 
-    sqlx::query!(
-        "SELECT user FROM List_Accesses WHERE user=? AND list_id=(SELECT list_id FROM ListItems WHERE id=?)",
-        user,
-        list_item_id
-    ).fetch_optional(&state.db_conn)
-        .await
-        .map_err(|_| StatusCode::INTERNAL_SERVER_ERROR)?
-        .ok_or(StatusCode::UNAUTHORIZED)?;
+    if !has_access_to_list(&state.db_conn, list_id, &headers).await {
+        return Err(StatusCode::UNAUTHORIZED);
+    }
 
     let deleted_id = sqlx::query!(
         "DELETE FROM ListItems WHERE id=? AND list_id=? RETURNING id",
