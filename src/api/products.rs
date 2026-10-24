@@ -11,7 +11,7 @@ use std::sync::Arc;
 pub struct Product {
     id: i64,
     name: String,
-    category_name: Option<String>,
+    category_id: i64,
 }
 
 #[derive(Deserialize)]
@@ -47,8 +47,8 @@ pub async fn query_products(
         sqlx::query_as!(
             Product,
             "
-        SELECT p.id, p.name as name,c.name as category_name FROM Products p
-        JOIN Categories c ON p.category_id=c.id WHERE p.name LIKE concat('%',?,'%') AND p.list_id=?;
+        SELECT id, name, category_id FROM Products
+        WHERE name LIKE concat('%',?,'%') AND list_id=?;
         ",
             q,
             list_id
@@ -59,8 +59,8 @@ pub async fn query_products(
         sqlx::query_as!(
             Product,
             "
-        SELECT p.id, p.name as name,c.name as category_name FROM Products p
-        JOIN Categories c ON p.category_id=c.id WHERE p.list_id=?;
+        SELECT id, name,category_id FROM Products
+        WHERE list_id=?;
         ",
             list_id
         )
@@ -99,8 +99,8 @@ pub async fn get_product(
     let products = sqlx::query_as!(
         Product,
         "
-        SELECT p.id, p.name as name,c.name as category_name FROM Products p
-        JOIN Categories c ON p.category_id=c.id WHERE p.id=? AND p.list_id=?;
+        SELECT id, name,category_id FROM Products
+        WHERE id=? AND list_id=?;
         ",
         product_id,
         list_id
@@ -172,8 +172,8 @@ pub async fn update_product(
     let products = sqlx::query_as!(
         Product,
         "
-        SELECT p.id, p.name as name,c.name as category_name FROM Products p
-        JOIN Categories c ON p.category_id=c.id WHERE p.id=? AND p.list_id=?;
+        SELECT id,name,category_id FROM Products
+        WHERE id=? AND list_id=?;
         ",
         product_id,
         list_id
