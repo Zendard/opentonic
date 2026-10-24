@@ -4,7 +4,7 @@ use axum::{
     extract::{self, State},
     http::{HeaderMap, StatusCode},
 };
-use serde::Serialize;
+use serde::{Deserialize, Serialize};
 use std::sync::Arc;
 
 #[derive(Debug, Serialize)]
@@ -76,5 +76,47 @@ pub async fn get_category(
     .map_err(|_| StatusCode::INTERNAL_SERVER_ERROR)?
     .ok_or(StatusCode::NOT_FOUND)?;
 
+    Ok(Json(category))
+}
+
+#[derive(Debug, Deserialize)]
+pub struct CreateCategoryReq {
+    name: String,
+    icon_id: Option<String>,
+    order_index: Option<i64>,
+}
+pub async fn create_category(
+    headers: HeaderMap,
+    extract::Path(list_id): extract::Path<String>,
+    State(state): State<Arc<ServerState>>,
+    Json(body): Json<CreateCategoryReq>,
+) -> Result<Json<Category>, StatusCode> {
+    if !has_access_to_list(
+        &state.db_conn,
+        list_id.parse().map_err(|_| StatusCode::BAD_REQUEST)?,
+        &headers,
+    )
+    .await
+    {
+        return Err(StatusCode::UNAUTHORIZED);
+    }
+
+    let category = sqlx::query_as!(
+        Category,
+        "
+        INSERT INTO Categories(list_id,name,icon_id,order_index) VALUES (?,?,?,?);
+
+        SELECT id,name,order_index,icon_id FROM Categories
+        WHERE list_id=? AND id=last_insert_rowid();
+        ",
+        list_id,
+        body.name,
+        body.icon_id,
+        body.order_index,
+        list_id,
+    )
+    .fetch_one(&state.db_conn)
+    .await
+    .map_err(|_| StatusCode::INTERNAL_SERVER_ERROR)?;
     Ok(Json(category))
 }
