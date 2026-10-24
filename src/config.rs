@@ -8,6 +8,7 @@ pub struct Config {
     pub host_port: u16,
     pub html_dir: std::path::PathBuf,
     pub static_dir: std::path::PathBuf,
+    pub icons_dir: std::path::PathBuf,
     pub db_file: std::path::PathBuf,
     pub url_prefix: String,
 }
@@ -36,6 +37,7 @@ impl Default for Config {
             host_port: 80,
             html_dir: PathBuf::from_str("html").unwrap(),
             static_dir: PathBuf::from_str("static").unwrap(),
+            icons_dir: PathBuf::from_str("icons").unwrap(),
             db_file: PathBuf::from_str("db.sqlite").unwrap(),
             url_prefix: "/".to_string(),
         }

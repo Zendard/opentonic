@@ -12,6 +12,7 @@ The config is loaded from `/etc/opentonic/config.toml` unless specified otherwis
 |`host_port`|u16|`80`|Port on which to host the web server|
 |`html_dir`|String|`./html`|Path to the HTML files|
 |`static`|String|`./static`|Path to the static files|
+|`icons`|String|`./icons`|Path to icon files|
 |`db_file`|String|`./db.sqlite`|Path to the SQLite database file|
 |`url_prefix`|String|`/`|Url prefix on which to receive requests (for running under a subdirectory)|
 
@@ -20,6 +21,10 @@ The config is loaded from `/etc/opentonic/config.toml` unless specified otherwis
 Please use a reverse proxy like nginx for authentication. Opentonic expects the `X-Forwarded-User`
 header to contain the username of the current user. In nginx this can be achieved with 
 `proxy_set_header X-Forwarded-User $remote_user;`
+
+## Icons
+OpenTonic does not provide icons itself. You have to place svg icons inside
+the icons folder (see config). I recommend [Noun Project](https://thenounproject.com/).
 
 ### Example nginx config
 ```
