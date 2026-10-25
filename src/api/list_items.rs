@@ -12,7 +12,7 @@ pub struct ListItem {
     id: i64,
     name: String,
     checked: bool,
-    category: String,
+    product_id: i64,
     added_by: String,
     added_on: String,
 }
@@ -35,9 +35,8 @@ pub async fn get_list_items(
     let list_items = sqlx::query_as!(
         ListItem,
         r#"
-        SELECT li.id, p.name, added_by, datetime(added_on) as "added_on!", c.name as category, checked FROM ListItems li
+        SELECT li.id, p.name, added_by, datetime(added_on) as "added_on!", p.id as product_id, checked FROM ListItems li
         JOIN Products p ON p.id=product_id
-        JOIN Categories c ON c.id=p.category_id
         WHERE li.list_id=?;
         "#,
         list_id
@@ -107,9 +106,8 @@ pub async fn create_list_item(
         r#"
         INSERT INTO ListItems(product_id,list_id,added_by) VALUES (?,?,?);
 
-        SELECT li.id, p.name, added_by, datetime(added_on) as "added_on!", c.name as category, checked FROM ListItems li
+        SELECT li.id, p.name, added_by, datetime(added_on) as "added_on!", p.id as product_id, checked FROM ListItems li
         JOIN Products p ON p.id=product_id
-        JOIN Categories c ON c.id=p.category_id
         WHERE li.id=last_insert_rowid();
 
         "#,
@@ -141,9 +139,8 @@ pub async fn get_list_item(
     let list_item = sqlx::query_as!(
         ListItem,
         r#"
-        SELECT li.id, p.name, added_by, datetime(added_on) as "added_on!", c.name as category, checked FROM ListItems li
+        SELECT li.id, p.name, added_by, datetime(added_on) as "added_on!", p.id as product_id, checked FROM ListItems li
         JOIN Products p ON p.id=product_id
-        JOIN Categories c ON c.id=p.category_id
         WHERE li.id=? AND li.list_id=?;
         "#,
         list_item_id,list_id
@@ -176,9 +173,8 @@ pub async fn update_list_item(
         ListItem,
         r#"
             UPDATE ListItems SET checked=? WHERE id=?;
-        SELECT li.id, p.name, added_by, datetime(added_on) as "added_on!", c.name as category, checked FROM ListItems li
+        SELECT li.id, p.name, added_by, datetime(added_on) as "added_on!", p.id as product_id, checked FROM ListItems li
         JOIN Products p ON p.id=product_id
-        JOIN Categories c ON c.id=p.category_id
         WHERE li.id=? AND li.list_id=?;
 
             "#,
