@@ -1,0 +1,39 @@
+-- Add migration script here
+CREATE TABLE IF NOT EXISTS Lists(
+  id INTEGER PRIMARY KEY AUTOINCREMENT,
+  name TEXT NOT NULL,
+  owner TEXT NOT NULL
+);
+CREATE TABLE IF NOT EXISTS List_Accesses(
+  list_id INTEGER NOT NULL,
+  user TEXT NOT NULL,
+  PRIMARY KEY(list_id,user),
+  FOREIGN KEY(list_id) REFERENCES Lists(id)
+);
+CREATE TABLE IF NOT EXISTS Categories(
+  id INTEGER PRIMARY KEY AUTOINCREMENT,
+  name TEXT NOT NULL,
+  icon_id TEXT,
+  order_index INTEGER DEFAULT id NOT NULL,
+  list_id INTEGER NOT NULL,
+  FOREIGN KEY(list_id) REFERENCES Lists(id)
+);
+CREATE TABLE IF NOT EXISTS Products(
+  id INTEGER PRIMARY KEY AUTOINCREMENT,
+  name TEXT NOT NULL, 
+  category_id INTEGER DEFAULT 1 NOT NULL,
+  list_id INTEGER NOT NULL,
+  FOREIGN KEY(category_id) REFERENCES Categories(id)
+  FOREIGN KEY(list_id) REFERENCES Lists(id)
+);
+CREATE TABLE IF NOT EXISTS ListItems(
+  id INTEGER PRIMARY KEY AUTOINCREMENT,
+  checked BOOL NOT NULL DEFAULT false,
+  product_id INTEGER NOT NULL,
+  list_id INTEGER NOT NULL,
+  added_by TEXT NOT NULL,
+  added_on DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  FOREIGN KEY(product_id) REFERENCES Products(id),
+  FOREIGN KEY(list_id) REFERENCES Lists(id)
+);
+

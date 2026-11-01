@@ -5,8 +5,8 @@ use axum::{
     response::{Html, IntoResponse, Response},
     routing::{delete, get, post, put},
 };
-use sqlx::{Pool, Sqlite};
-use std::{fs, sync::Arc};
+use sqlx::{Sqlite, sqlite::SqliteConnectOptions};
+use std::{fs, str::FromStr, sync::Arc};
 
 mod api;
 pub mod config;
@@ -25,10 +25,15 @@ pub async fn run_server(config: Config) {
     let host_socket = std::net::SocketAddr::new(config.host_address, config.host_port);
 
     let db_url = "sqlite://".to_string() + config.db_file.to_str().unwrap();
-    let db_conn = sqlx::Pool::connect(&db_url)
-        .await
-        .expect("Could not connect to database");
-    init_db(&db_conn).await;
+    let db_conn = sqlx::Pool::connect_with(
+        SqliteConnectOptions::from_str(&db_url)
+            .unwrap()
+            .create_if_missing(true),
+    )
+    .await
+    .expect("Could not connect to database");
+
+    sqlx::migrate!().run(&db_conn).await.unwrap();
 
     let url_pfx = config.url_prefix.clone();
     let server_state = Arc::new(ServerState { config, db_conn });
@@ -124,54 +129,6 @@ pub async fn run_server(config: Config) {
         .expect("Failed to bind to socket");
     println!("Starting server...");
     axum::serve(listener, server).await.unwrap();
-}
-
-async fn init_db(db: &Pool<Sqlite>) {
-    sqlx::query!(
-        "
-        PRAGMA foreign_keys=on;
-        CREATE TABLE IF NOT EXISTS Lists(
-            id INTEGER PRIMARY KEY AUTOINCREMENT,
-            name TEXT NOT NULL,
-            owner TEXT NOT NULL
-        );
-        CREATE TABLE IF NOT EXISTS List_Accesses(
-            list_id INTEGER NOT NULL,
-            user TEXT NOT NULL,
-            PRIMARY KEY(list_id,user),
-            FOREIGN KEY(list_id) REFERENCES Lists(id)
-        );
-        CREATE TABLE IF NOT EXISTS Categories(
-            id INTEGER PRIMARY KEY AUTOINCREMENT,
-            name TEXT NOT NULL,
-            icon_id TEXT,
-            order_index INTEGER DEFAULT id NOT NULL,
-            list_id INTEGER NOT NULL,
-            FOREIGN KEY(list_id) REFERENCES Lists(id)
-        );
-        CREATE TABLE IF NOT EXISTS Products(
-            id INTEGER PRIMARY KEY AUTOINCREMENT,
-            name TEXT NOT NULL, 
-            category_id INTEGER DEFAULT 1 NOT NULL,
-            list_id INTEGER NOT NULL,
-            FOREIGN KEY(category_id) REFERENCES Categories(id)
-            FOREIGN KEY(list_id) REFERENCES Lists(id)
-        );
-        CREATE TABLE IF NOT EXISTS ListItems(
-            id INTEGER PRIMARY KEY AUTOINCREMENT,
-            checked BOOL NOT NULL DEFAULT false,
-            product_id INTEGER NOT NULL,
-            list_id INTEGER NOT NULL,
-            added_by TEXT NOT NULL,
-            added_on DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
-            FOREIGN KEY(product_id) REFERENCES Products(id),
-            FOREIGN KEY(list_id) REFERENCES Lists(id)
-        );
-        "
-    )
-    .execute(db)
-    .await
-    .unwrap();
 }
 
 async fn index_page(

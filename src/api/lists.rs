@@ -60,25 +60,57 @@ pub async fn create_list(
         .to_str()
         .map_err(|_| StatusCode::BAD_REQUEST)?;
 
-    let list=sqlx::query_as!(
+    let mut tx = state
+        .db_conn
+        .begin()
+        .await
+        .map_err(|_| StatusCode::INTERNAL_SERVER_ERROR)?;
+
+    let list_id: i64 = sqlx::query!(
+        "INSERT INTO Lists (name, owner) VALUES (?, ?) RETURNING id",
+        body.name,
+        user
+    )
+    .fetch_one(&mut *tx)
+    .await
+    .map_err(|_| StatusCode::INTERNAL_SERVER_ERROR)?
+    .id;
+
+    sqlx::query!(
+        "INSERT INTO List_Accesses (list_id, user) VALUES (?, ?)",
+        list_id,
+        user
+    )
+    .execute(&mut *tx)
+    .await
+    .map_err(|_| StatusCode::INTERNAL_SERVER_ERROR)?;
+
+    sqlx::query!(
+        "INSERT INTO Categories (name, list_id) VALUES ('Uncategorized', ?)",
+        list_id
+    )
+    .execute(&mut *tx)
+    .await
+    .map_err(|_| StatusCode::INTERNAL_SERVER_ERROR)?;
+
+    tx.commit()
+        .await
+        .map_err(|_| StatusCode::INTERNAL_SERVER_ERROR)?;
+
+    let list = sqlx::query_as!(
         List,
-        r#" 
-        INSERT INTO Lists(name,owner) VALUES (?,?);
-
-        INSERT INTO Categories(id,name,list_id) VALUES (1,"Uncategorized",last_insert_rowid());
-
-        INSERT INTO List_Accesses(list_id,user) VALUES ((SELECT list_id FROM Categories WHERE id=last_insert_rowid()),?);
-
-        SELECT id,name,owner,json_group_array(la.user) as "users!: SqlxJson<Vec<String>>" FROM Lists l 
-        LEFT JOIN List_Accesses la ON la.list_id = l.id
-        WHERE l.id = (SELECT list_id FROM List_Accesses WHERE rowid=last_insert_rowid())
-        GROUP BY l.id;
+        r#"
+         SELECT id,name,owner,json_group_array(la.user) as "users!: SqlxJson<Vec<String>>" FROM Lists l 
+         LEFT JOIN List_Accesses la ON la.list_id = l.id
+         WHERE l.id=?
+         GROUP BY l.id;
         "#,
-        body.name,user,user
+        list_id
     )
     .fetch_one(&state.db_conn)
     .await
     .map_err(|_| StatusCode::INTERNAL_SERVER_ERROR)?;
+
     Ok(Json(list))
 }
 
