@@ -132,13 +132,18 @@ pub async fn update_product(
         .to_str()
         .map_err(|_| StatusCode::BAD_REQUEST)?;
     let list_id: i64 = list_id.parse().map_err(|_| StatusCode::BAD_REQUEST)?;
+    let mut tx = state
+        .db_conn
+        .begin()
+        .await
+        .map_err(|_| StatusCode::INTERNAL_SERVER_ERROR)?;
 
     sqlx::query!(
         "SELECT user FROM List_Accesses WHERE user=? AND list_id=?",
         user,
         list_id
     )
-    .fetch_optional(&state.db_conn)
+    .fetch_optional(&mut *tx)
     .await
     .map_err(|_| StatusCode::INTERNAL_SERVER_ERROR)?
     .ok_or(StatusCode::UNAUTHORIZED)?;
@@ -151,7 +156,7 @@ pub async fn update_product(
             name,
             product_id
         )
-        .execute(&state.db_conn)
+        .execute(&mut *tx)
         .await
         .map_err(|_| StatusCode::INTERNAL_SERVER_ERROR)?;
     }
@@ -164,7 +169,7 @@ pub async fn update_product(
             category_id,
             product_id
         )
-        .execute(&state.db_conn)
+        .execute(&mut *tx)
         .await
         .map_err(|_| StatusCode::INTERNAL_SERVER_ERROR)?;
     }
@@ -178,10 +183,14 @@ pub async fn update_product(
         product_id,
         list_id
     )
-    .fetch_optional(&state.db_conn)
+    .fetch_optional(&mut *tx)
     .await
     .map_err(|_| StatusCode::INTERNAL_SERVER_ERROR)?
     .ok_or(StatusCode::NOT_FOUND)?;
+
+    tx.commit()
+        .await
+        .map_err(|_| StatusCode::INTERNAL_SERVER_ERROR)?;
 
     Ok(Json(products))
 }

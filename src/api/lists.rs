@@ -164,6 +164,11 @@ pub async fn update_list(
         .to_str()
         .map_err(|_| StatusCode::BAD_REQUEST)?;
     let list_id: i64 = list_id.parse().map_err(|_| StatusCode::BAD_REQUEST)?;
+    let mut tx = state
+        .db_conn
+        .begin()
+        .await
+        .map_err(|_| StatusCode::INTERNAL_SERVER_ERROR)?;
 
     let owner = sqlx::query!(
         "
@@ -171,7 +176,7 @@ pub async fn update_list(
         ",
         list_id
     )
-    .fetch_optional(&state.db_conn)
+    .fetch_optional(&mut *tx)
     .await
     .map_err(|_| StatusCode::INTERNAL_SERVER_ERROR)?
     .ok_or(StatusCode::NOT_FOUND)?
@@ -189,7 +194,7 @@ pub async fn update_list(
             name,
             list_id
         )
-        .execute(&state.db_conn)
+        .execute(&mut *tx)
         .await
         .map_err(|_| StatusCode::INTERNAL_SERVER_ERROR)?;
     }
@@ -206,7 +211,7 @@ pub async fn update_list(
             ",
             list_id
         )
-        .execute(&state.db_conn)
+        .execute(&mut *tx)
         .await
         .map_err(|_| StatusCode::INTERNAL_SERVER_ERROR)?;
 
@@ -218,7 +223,7 @@ pub async fn update_list(
                 list_id,
                 user
             )
-            .execute(&state.db_conn)
+            .execute(&mut *tx)
             .await
             .map_err(|_| StatusCode::INTERNAL_SERVER_ERROR)?;
         }
@@ -234,9 +239,13 @@ pub async fn update_list(
         "#,
         list_id
     )
-    .fetch_one(&state.db_conn)
+    .fetch_one(&mut *tx)
     .await
     .map_err(|_| StatusCode::INTERNAL_SERVER_ERROR)?;
+
+    tx.commit()
+        .await
+        .map_err(|_| StatusCode::INTERNAL_SERVER_ERROR)?;
 
     Ok(Json(list))
 }

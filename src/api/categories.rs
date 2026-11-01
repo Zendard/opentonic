@@ -141,6 +141,12 @@ pub async fn update_category(
         return Err(StatusCode::UNAUTHORIZED);
     }
 
+    let mut tx = state
+        .db_conn
+        .begin()
+        .await
+        .map_err(|_| StatusCode::INTERNAL_SERVER_ERROR)?;
+
     if let Some(name) = body.name {
         sqlx::query!(
             "
@@ -151,7 +157,7 @@ pub async fn update_category(
             category_id,
             list_id
         )
-        .execute(&state.db_conn)
+        .execute(&mut *tx)
         .await
         .map_err(|_| StatusCode::INTERNAL_SERVER_ERROR)?;
     }
@@ -166,7 +172,7 @@ pub async fn update_category(
             category_id,
             list_id
         )
-        .execute(&state.db_conn)
+        .execute(&mut *tx)
         .await
         .map_err(|_| StatusCode::INTERNAL_SERVER_ERROR)?;
     }
@@ -181,7 +187,7 @@ pub async fn update_category(
             category_id,
             list_id
         )
-        .execute(&state.db_conn)
+        .execute(&mut *tx)
         .await
         .map_err(|_| StatusCode::INTERNAL_SERVER_ERROR)?;
     }
@@ -195,9 +201,14 @@ pub async fn update_category(
         list_id,
         category_id
     )
-    .fetch_one(&state.db_conn)
+    .fetch_one(&mut *tx)
     .await
     .map_err(|_| StatusCode::INTERNAL_SERVER_ERROR)?;
+
+    tx.commit()
+        .await
+        .map_err(|_| StatusCode::INTERNAL_SERVER_ERROR)?;
+
     Ok(Json(category))
 }
 

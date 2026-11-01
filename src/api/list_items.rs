@@ -76,13 +76,19 @@ pub async fn create_list_item(
         return Err(StatusCode::UNAUTHORIZED);
     }
 
+    let mut tx = state
+        .db_conn
+        .begin()
+        .await
+        .map_err(|_| StatusCode::INTERNAL_SERVER_ERROR)?;
+
     let product_id = sqlx::query!(
         "
         SELECT id FROM Products WHERE name=?;
         ",
         body.name
     )
-    .fetch_optional(&state.db_conn)
+    .fetch_optional(&mut *tx)
     .await
     .map_err(|_| StatusCode::INTERNAL_SERVER_ERROR)?;
 
@@ -97,7 +103,7 @@ pub async fn create_list_item(
             body.name,
             list_id
         )
-        .fetch_one(&state.db_conn)
+        .fetch_one(&mut *tx)
         .await
         .map_err(|_| StatusCode::INTERNAL_SERVER_ERROR)?
         .id
@@ -118,9 +124,14 @@ pub async fn create_list_item(
         list_id,
         user
     )
-    .fetch_one(&state.db_conn)
+    .fetch_one(&mut *tx)
     .await
     .map_err(|_| StatusCode::INTERNAL_SERVER_ERROR)?;
+
+    tx.commit()
+        .await
+        .map_err(|_| StatusCode::INTERNAL_SERVER_ERROR)?;
+
     Ok(Json(list_item))
 }
 
