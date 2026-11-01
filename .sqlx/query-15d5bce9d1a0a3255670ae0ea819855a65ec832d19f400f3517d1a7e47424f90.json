@@ -1,0 +1,26 @@
+{
+  "db_name": "SQLite",
+  "query": "SELECT owner FROM Lists WHERE owner=? AND id=?",
+  "describe": {
+    "columns": [
+      {
+        "name": "owner",
+        "ordinal": 0,
+        "type_info": "Text",
+        "origin": {
+          "Table": {
+            "table": "Lists",
+            "name": "owner"
+          }
+        }
+      }
+    ],
+    "parameters": {
+      "Right": 2
+    },
+    "nullable": [
+      false
+    ]
+  },
+  "hash": "15d5bce9d1a0a3255670ae0ea819855a65ec832d19f400f3517d1a7e47424f90"
+}

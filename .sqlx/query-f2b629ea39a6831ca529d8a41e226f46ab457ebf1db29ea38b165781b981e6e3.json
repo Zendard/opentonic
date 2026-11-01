@@ -1,0 +1,12 @@
+{
+  "db_name": "SQLite",
+  "query": "\n            UPDATE Categories SET name=?\n            WHERE id=? AND list_id=?;\n            ",
+  "describe": {
+    "columns": [],
+    "parameters": {
+      "Right": 3
+    },
+    "nullable": []
+  },
+  "hash": "f2b629ea39a6831ca529d8a41e226f46ab457ebf1db29ea38b165781b981e6e3"
+}

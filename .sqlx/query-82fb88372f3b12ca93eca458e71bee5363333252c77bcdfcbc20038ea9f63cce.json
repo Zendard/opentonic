@@ -1,0 +1,26 @@
+{
+  "db_name": "SQLite",
+  "query": "\n        DELETE FROM Products WHERE id=? RETURNING id;\n        ",
+  "describe": {
+    "columns": [
+      {
+        "name": "id",
+        "ordinal": 0,
+        "type_info": "Integer",
+        "origin": {
+          "Table": {
+            "table": "Products",
+            "name": "id"
+          }
+        }
+      }
+    ],
+    "parameters": {
+      "Right": 1
+    },
+    "nullable": [
+      false
+    ]
+  },
+  "hash": "82fb88372f3b12ca93eca458e71bee5363333252c77bcdfcbc20038ea9f63cce"
+}

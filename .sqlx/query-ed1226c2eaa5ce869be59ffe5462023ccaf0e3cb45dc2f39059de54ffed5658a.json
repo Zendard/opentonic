@@ -1,0 +1,12 @@
+{
+  "db_name": "SQLite",
+  "query": "INSERT INTO Categories (name, list_id) VALUES ('Uncategorized', ?)",
+  "describe": {
+    "columns": [],
+    "parameters": {
+      "Right": 1
+    },
+    "nullable": []
+  },
+  "hash": "ed1226c2eaa5ce869be59ffe5462023ccaf0e3cb45dc2f39059de54ffed5658a"
+}

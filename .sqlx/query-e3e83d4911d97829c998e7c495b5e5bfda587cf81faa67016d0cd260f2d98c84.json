@@ -1,0 +1,62 @@
+{
+  "db_name": "SQLite",
+  "query": "\n        INSERT INTO Categories(list_id,name,icon_id) VALUES (?,?,?);\n\n        SELECT id,name,order_index,icon_id FROM Categories\n        WHERE list_id=? AND id=last_insert_rowid();\n        ",
+  "describe": {
+    "columns": [
+      {
+        "name": "id",
+        "ordinal": 0,
+        "type_info": "Integer",
+        "origin": {
+          "Table": {
+            "table": "Categories",
+            "name": "id"
+          }
+        }
+      },
+      {
+        "name": "name",
+        "ordinal": 1,
+        "type_info": "Text",
+        "origin": {
+          "Table": {
+            "table": "Categories",
+            "name": "name"
+          }
+        }
+      },
+      {
+        "name": "order_index",
+        "ordinal": 2,
+        "type_info": "Integer",
+        "origin": {
+          "Table": {
+            "table": "Categories",
+            "name": "order_index"
+          }
+        }
+      },
+      {
+        "name": "icon_id",
+        "ordinal": 3,
+        "type_info": "Text",
+        "origin": {
+          "Table": {
+            "table": "Categories",
+            "name": "icon_id"
+          }
+        }
+      }
+    ],
+    "parameters": {
+      "Right": 4
+    },
+    "nullable": [
+      false,
+      false,
+      false,
+      true
+    ]
+  },
+  "hash": "e3e83d4911d97829c998e7c495b5e5bfda587cf81faa67016d0cd260f2d98c84"
+}

@@ -41,7 +41,7 @@ impl Default for Config {
             static_dir: PathBuf::from_str("static").unwrap(),
             icons_dir: PathBuf::from_str("icons").unwrap(),
             db_file: PathBuf::from_str("db.sqlite").unwrap(),
-            url_prefix: "/".to_string(),
+            url_prefix: "".to_string(),
         }
     }
 }

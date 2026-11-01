@@ -1,0 +1,26 @@
+{
+  "db_name": "SQLite",
+  "query": "\n        DELETE FROM List_Accesses WHERE list_id=?;\n        DELETE FROM ListItems WHERE list_id=?;\n        DELETE FROM Products WHERE list_id=?;\n        DELETE FROM Categories WHERE list_id=?;\n        DELETE FROM Lists WHERE id=? RETURNING id;\n        ",
+  "describe": {
+    "columns": [
+      {
+        "name": "id",
+        "ordinal": 0,
+        "type_info": "Integer",
+        "origin": {
+          "Table": {
+            "table": "Lists",
+            "name": "id"
+          }
+        }
+      }
+    ],
+    "parameters": {
+      "Right": 5
+    },
+    "nullable": [
+      null
+    ]
+  },
+  "hash": "946ab66f7e4b9f72ba8089c58e762d4b56d29011067b0a5dcc0a557ecab08fdd"
+}

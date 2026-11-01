@@ -1,0 +1,93 @@
+{
+  "db_name": "SQLite",
+  "query": "\n        SELECT li.id, p.name, added_by, datetime(added_on) as \"added_on!\", p.id as product_id, c.id as category_id, checked FROM ListItems li\n        JOIN Products p ON p.id=product_id\n        JOIN Categories c ON c.id=p.category_id\n        WHERE li.id=? AND li.list_id=?;\n        ",
+  "describe": {
+    "columns": [
+      {
+        "name": "id",
+        "ordinal": 0,
+        "type_info": "Integer",
+        "origin": {
+          "Table": {
+            "table": "ListItems",
+            "name": "id"
+          }
+        }
+      },
+      {
+        "name": "name",
+        "ordinal": 1,
+        "type_info": "Text",
+        "origin": {
+          "Table": {
+            "table": "Products",
+            "name": "name"
+          }
+        }
+      },
+      {
+        "name": "added_by",
+        "ordinal": 2,
+        "type_info": "Text",
+        "origin": {
+          "Table": {
+            "table": "ListItems",
+            "name": "added_by"
+          }
+        }
+      },
+      {
+        "name": "added_on!",
+        "ordinal": 3,
+        "type_info": "Text",
+        "origin": "Expression"
+      },
+      {
+        "name": "product_id",
+        "ordinal": 4,
+        "type_info": "Integer",
+        "origin": {
+          "Table": {
+            "table": "Products",
+            "name": "id"
+          }
+        }
+      },
+      {
+        "name": "category_id",
+        "ordinal": 5,
+        "type_info": "Integer",
+        "origin": {
+          "Table": {
+            "table": "Categories",
+            "name": "id"
+          }
+        }
+      },
+      {
+        "name": "checked",
+        "ordinal": 6,
+        "type_info": "Bool",
+        "origin": {
+          "Table": {
+            "table": "ListItems",
+            "name": "checked"
+          }
+        }
+      }
+    ],
+    "parameters": {
+      "Right": 2
+    },
+    "nullable": [
+      false,
+      false,
+      false,
+      true,
+      false,
+      false,
+      false
+    ]
+  },
+  "hash": "cd8af8eeb3bfe92566dd832647efdb1f35b18e01264ea8e380d733cf32dbcc2f"
+}

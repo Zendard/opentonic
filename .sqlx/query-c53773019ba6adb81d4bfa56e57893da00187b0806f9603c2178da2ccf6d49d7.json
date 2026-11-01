@@ -1,0 +1,26 @@
+{
+  "db_name": "SQLite",
+  "query": "SELECT user FROM List_Accesses WHERE user=? AND list_id=?",
+  "describe": {
+    "columns": [
+      {
+        "name": "user",
+        "ordinal": 0,
+        "type_info": "Text",
+        "origin": {
+          "Table": {
+            "table": "List_Accesses",
+            "name": "user"
+          }
+        }
+      }
+    ],
+    "parameters": {
+      "Right": 2
+    },
+    "nullable": [
+      false
+    ]
+  },
+  "hash": "c53773019ba6adb81d4bfa56e57893da00187b0806f9603c2178da2ccf6d49d7"
+}

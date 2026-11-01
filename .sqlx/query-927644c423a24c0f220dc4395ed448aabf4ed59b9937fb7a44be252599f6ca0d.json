@@ -1,0 +1,12 @@
+{
+  "db_name": "SQLite",
+  "query": "\n                DELETE FROM List_Accesses WHERE list_id=?\n            ",
+  "describe": {
+    "columns": [],
+    "parameters": {
+      "Right": 1
+    },
+    "nullable": []
+  },
+  "hash": "927644c423a24c0f220dc4395ed448aabf4ed59b9937fb7a44be252599f6ca0d"
+}

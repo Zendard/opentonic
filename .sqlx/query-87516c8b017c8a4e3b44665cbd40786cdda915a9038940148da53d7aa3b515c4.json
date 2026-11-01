@@ -1,0 +1,12 @@
+{
+  "db_name": "SQLite",
+  "query": "INSERT INTO List_Accesses (list_id, user) VALUES (?, ?)",
+  "describe": {
+    "columns": [],
+    "parameters": {
+      "Right": 2
+    },
+    "nullable": []
+  },
+  "hash": "87516c8b017c8a4e3b44665cbd40786cdda915a9038940148da53d7aa3b515c4"
+}

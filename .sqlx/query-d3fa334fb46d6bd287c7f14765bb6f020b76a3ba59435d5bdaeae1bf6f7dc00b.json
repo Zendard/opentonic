@@ -1,0 +1,26 @@
+{
+  "db_name": "SQLite",
+  "query": "\n            INSERT INTO Products(name,list_id) VALUES (?,?);\n            SELECT id FROM Products WHERE id==last_insert_rowid();\n            ",
+  "describe": {
+    "columns": [
+      {
+        "name": "id",
+        "ordinal": 0,
+        "type_info": "Integer",
+        "origin": {
+          "Table": {
+            "table": "Products",
+            "name": "id"
+          }
+        }
+      }
+    ],
+    "parameters": {
+      "Right": 2
+    },
+    "nullable": [
+      false
+    ]
+  },
+  "hash": "d3fa334fb46d6bd287c7f14765bb6f020b76a3ba59435d5bdaeae1bf6f7dc00b"
+}

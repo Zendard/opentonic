@@ -1,0 +1,26 @@
+{
+  "db_name": "SQLite",
+  "query": "\n        SELECT rowid FROM List_Accesses WHERE list_id=? AND user=?;\n        ",
+  "describe": {
+    "columns": [
+      {
+        "name": "rowid",
+        "ordinal": 0,
+        "type_info": "Integer",
+        "origin": {
+          "Table": {
+            "table": "List_Accesses",
+            "name": "rowid"
+          }
+        }
+      }
+    ],
+    "parameters": {
+      "Right": 2
+    },
+    "nullable": [
+      false
+    ]
+  },
+  "hash": "bd3b2c75e6a688d981a8bfa7d28a37706ee2472c8b45646c5578ff3921f17f12"
+}

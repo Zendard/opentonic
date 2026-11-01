@@ -1,0 +1,57 @@
+{
+  "db_name": "SQLite",
+  "query": "\n         SELECT id,name,owner,json_group_array(la.user) as \"users!: SqlxJson<Vec<String>>\" FROM Lists l \n         LEFT JOIN List_Accesses la ON la.list_id = l.id\n         WHERE l.id=?\n         GROUP BY l.id;\n        ",
+  "describe": {
+    "columns": [
+      {
+        "name": "id",
+        "ordinal": 0,
+        "type_info": "Integer",
+        "origin": {
+          "Table": {
+            "table": "Lists",
+            "name": "id"
+          }
+        }
+      },
+      {
+        "name": "name",
+        "ordinal": 1,
+        "type_info": "Text",
+        "origin": {
+          "Table": {
+            "table": "Lists",
+            "name": "name"
+          }
+        }
+      },
+      {
+        "name": "owner",
+        "ordinal": 2,
+        "type_info": "Text",
+        "origin": {
+          "Table": {
+            "table": "Lists",
+            "name": "owner"
+          }
+        }
+      },
+      {
+        "name": "users!: SqlxJson<Vec<String>>",
+        "ordinal": 3,
+        "type_info": "Text",
+        "origin": "Expression"
+      }
+    ],
+    "parameters": {
+      "Right": 1
+    },
+    "nullable": [
+      false,
+      false,
+      false,
+      true
+    ]
+  },
+  "hash": "ec4d86f9f881fa4444841689ba1279506b77c6f1ba72ffd92d2a25b2fa07c110"
+}

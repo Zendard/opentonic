@@ -1,0 +1,12 @@
+{
+  "db_name": "SQLite",
+  "query": "\n                INSERT INTO List_Accesses(list_id,user) VALUES (?,?) ON CONFLICT DO NOTHING;\n                ",
+  "describe": {
+    "columns": [],
+    "parameters": {
+      "Right": 2
+    },
+    "nullable": []
+  },
+  "hash": "9a5aafca7ecb9fc6c2ee1a4dd3e8d0db63cd3e671d0cdf808a21b17c1c7b5730"
+}

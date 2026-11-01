@@ -1,0 +1,12 @@
+{
+  "db_name": "SQLite",
+  "query": "\n            UPDATE Categories SET order_index=?\n            WHERE id=? AND list_id=?;\n            ",
+  "describe": {
+    "columns": [],
+    "parameters": {
+      "Right": 3
+    },
+    "nullable": []
+  },
+  "hash": "1dc704286cac4544a6539c8bdf4dd53263d761684734b886074ce02c4b9274ca"
+}
