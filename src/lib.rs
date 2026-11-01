@@ -7,6 +7,7 @@ use axum::{
 };
 use sqlx::{Sqlite, sqlite::SqliteConnectOptions};
 use std::{fs, str::FromStr, sync::Arc};
+use tower_http::services::ServeDir;
 
 mod api;
 pub mod config;
@@ -36,11 +37,12 @@ pub async fn run_server(config: Config) {
     sqlx::migrate!().run(&db_conn).await.unwrap();
 
     let url_pfx = config.url_prefix.clone();
+    let html_dir = config.html_dir.clone();
     let server_state = Arc::new(ServerState { config, db_conn });
     let server = axum::Router::new()
         .route(&(url_pfx.clone()), get(index_page))
-        .route(&(url_pfx.clone() + "static/css/{path}"), get(serve_css))
-        .route(&(url_pfx.clone() + "static/js/{path}"), get(serve_js))
+        // .route(&(url_pfx.clone() + "static/css/{path}"), get(serve_css))
+        // .route(&(url_pfx.clone() + "static/js/{path}"), get(serve_js))
         .route(&(url_pfx.clone() + "favicon.ico"), get(serve_favicon))
         .route(&(url_pfx.clone() + "static/icons/{path}"), get(serve_icons))
         .route(&(url_pfx.clone() + "api/lists"), get(api::lists::get_lists))
@@ -116,7 +118,7 @@ pub async fn run_server(config: Config) {
             &(url_pfx.clone() + "api/lists/{list_id}/categories/{category_id}"),
             delete(api::categories::delete_category),
         )
-        .route(&(url_pfx.clone() + "{path}"), get(serve_html))
+        .fallback_service(ServeDir::new(html_dir))
         .with_state(server_state);
 
     let listener = tokio::net::TcpListener::bind(host_socket)
