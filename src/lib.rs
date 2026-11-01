@@ -39,89 +39,84 @@ pub async fn run_server(config: Config) {
     let server_state = Arc::new(ServerState { config, db_conn });
     let server = axum::Router::new()
         .route(&(url_pfx.clone()), get(index_page))
-        .route(&(url_pfx.clone() + "/static/css/{path}"), get(serve_css))
-        .route(&(url_pfx.clone() + "/static/js/{path}"), get(serve_js))
+        .route(&(url_pfx.clone() + "static/css/{path}"), get(serve_css))
+        .route(&(url_pfx.clone() + "static/js/{path}"), get(serve_js))
+        .route(&(url_pfx.clone() + "favicon.ico"), get(serve_favicon))
+        .route(&(url_pfx.clone() + "static/icons/{path}"), get(serve_icons))
+        .route(&(url_pfx.clone() + "api/lists"), get(api::lists::get_lists))
         .route(
-            &(url_pfx.clone() + "/static/icons/{path}"),
-            get(serve_icons),
-        )
-        .route(
-            &(url_pfx.clone() + "/api/lists"),
-            get(api::lists::get_lists),
-        )
-        .route(
-            &(url_pfx.clone() + "/api/lists"),
+            &(url_pfx.clone() + "api/lists"),
             post(api::lists::create_list),
         )
         .route(
-            &(url_pfx.clone() + "/api/lists/{list_id}"),
+            &(url_pfx.clone() + "api/lists/{list_id}"),
             get(api::lists::get_list),
         )
         .route(
-            &(url_pfx.clone() + "/api/lists/{list_id}"),
+            &(url_pfx.clone() + "api/lists/{list_id}"),
             put(api::lists::update_list),
         )
         .route(
-            &(url_pfx.clone() + "/api/lists/{list_id}"),
+            &(url_pfx.clone() + "api/lists/{list_id}"),
             delete(api::lists::delete_list),
         )
         .route(
-            &(url_pfx.clone() + "/api/lists/{list_id}/items"),
+            &(url_pfx.clone() + "api/lists/{list_id}/items"),
             get(api::list_items::get_list_items),
         )
         .route(
-            &(url_pfx.clone() + "/api/lists/{list_id}/items"),
+            &(url_pfx.clone() + "api/lists/{list_id}/items"),
             post(api::list_items::create_list_item),
         )
         .route(
-            &(url_pfx.clone() + "/api/lists/{list_id}/items/{list_item_id}"),
+            &(url_pfx.clone() + "api/lists/{list_id}/items/{list_item_id}"),
             get(api::list_items::get_list_item),
         )
         .route(
-            &(url_pfx.clone() + "/api/lists/{list_id}/items/{list_item_id}"),
+            &(url_pfx.clone() + "api/lists/{list_id}/items/{list_item_id}"),
             put(api::list_items::update_list_item),
         )
         .route(
-            &(url_pfx.clone() + "/api/lists/{list_id}/items/{list_item_id}"),
+            &(url_pfx.clone() + "api/lists/{list_id}/items/{list_item_id}"),
             delete(api::list_items::delete_list_item),
         )
         .route(
-            &(url_pfx.clone() + "/api/lists/{list_id}/products"),
+            &(url_pfx.clone() + "api/lists/{list_id}/products"),
             get(api::products::query_products),
         )
         .route(
-            &(url_pfx.clone() + "/api/lists/{list_id}/products/{product_id}"),
+            &(url_pfx.clone() + "api/lists/{list_id}/products/{product_id}"),
             get(api::products::get_product),
         )
         .route(
-            &(url_pfx.clone() + "/api/lists/{list_id}/products/{product_id}"),
+            &(url_pfx.clone() + "api/lists/{list_id}/products/{product_id}"),
             put(api::products::update_product),
         )
         .route(
-            &(url_pfx.clone() + "/api/lists/{list_id}/products/{product_id}"),
+            &(url_pfx.clone() + "api/lists/{list_id}/products/{product_id}"),
             delete(api::products::delete_product),
         )
         .route(
-            &(url_pfx.clone() + "/api/lists/{list_id}/categories"),
+            &(url_pfx.clone() + "api/lists/{list_id}/categories"),
             get(api::categories::get_categories),
         )
         .route(
-            &(url_pfx.clone() + "/api/lists/{list_id}/categories/{category_id}"),
+            &(url_pfx.clone() + "api/lists/{list_id}/categories/{category_id}"),
             get(api::categories::get_category),
         )
         .route(
-            &(url_pfx.clone() + "/api/lists/{list_id}/categories"),
+            &(url_pfx.clone() + "api/lists/{list_id}/categories"),
             post(api::categories::create_category),
         )
         .route(
-            &(url_pfx.clone() + "/api/lists/{list_id}/categories/{category_id}"),
+            &(url_pfx.clone() + "api/lists/{list_id}/categories/{category_id}"),
             put(api::categories::update_category),
         )
         .route(
-            &(url_pfx.clone() + "/api/lists/{list_id}/categories/{category_id}"),
+            &(url_pfx.clone() + "api/lists/{list_id}/categories/{category_id}"),
             delete(api::categories::delete_category),
         )
-        .route(&(url_pfx.clone() + "/{path}"), get(serve_html))
+        .route(&(url_pfx.clone() + "{path}"), get(serve_html))
         .with_state(server_state);
 
     let listener = tokio::net::TcpListener::bind(host_socket)
@@ -169,11 +164,11 @@ async fn serve_css(
     extract::Path(path): extract::Path<String>,
 ) -> Result<Css, StatusCode> {
     let full_path = state.config.static_dir.join("css").join(path);
-    let css_str = fs::read_to_string(full_path).map_err(|_| StatusCode::NOT_FOUND)?;
-    Ok(Css(css_str))
+    let css = fs::read(full_path).map_err(|_| StatusCode::NOT_FOUND)?;
+    Ok(Css(css))
 }
 
-struct Css(String);
+struct Css(Vec<u8>);
 
 impl IntoResponse for Css {
     fn into_response(self) -> axum::response::Response {
@@ -189,11 +184,11 @@ async fn serve_js(
     extract::Path(path): extract::Path<String>,
 ) -> Result<Js, StatusCode> {
     let full_path = state.config.static_dir.join("js").join(path);
-    let js_str = fs::read_to_string(full_path).map_err(|_| StatusCode::NOT_FOUND)?;
-    Ok(Js(js_str))
+    let js = fs::read(full_path).map_err(|_| StatusCode::NOT_FOUND)?;
+    Ok(Js(js))
 }
 
-struct Js(String);
+struct Js(Vec<u8>);
 
 impl IntoResponse for Js {
     fn into_response(self) -> axum::response::Response {
@@ -209,16 +204,33 @@ async fn serve_icons(
     extract::Path(path): extract::Path<String>,
 ) -> Result<Svg, StatusCode> {
     let full_path = state.config.icons_dir.join(path + ".svg");
-    let svg_str = fs::read_to_string(full_path).map_err(|_| StatusCode::NOT_FOUND)?;
-    Ok(Svg(svg_str))
+    let svg = fs::read(full_path).map_err(|_| StatusCode::NOT_FOUND)?;
+    Ok(Svg(svg))
 }
 
-struct Svg(String);
+struct Svg(Vec<u8>);
 
 impl IntoResponse for Svg {
     fn into_response(self) -> axum::response::Response {
         Response::builder()
             .header("Content-Type", "image/svg+xml")
+            .body(self.0.into())
+            .unwrap()
+    }
+}
+
+async fn serve_favicon(State(state): State<Arc<ServerState>>) -> Result<Png, StatusCode> {
+    let full_path = state.config.static_dir.join("favicon.png");
+    let png = fs::read(full_path).map_err(|_| StatusCode::NOT_FOUND)?;
+    Ok(Png(png))
+}
+
+struct Png(Vec<u8>);
+
+impl IntoResponse for Png {
+    fn into_response(self) -> axum::response::Response {
+        Response::builder()
+            .header("Content-Type", "image/png")
             .body(self.0.into())
             .unwrap()
     }
