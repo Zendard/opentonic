@@ -19,53 +19,54 @@ WORKDIR /app
 RUN apk add --no-cache clang lld musl-dev git
 
 # Build the application
-RUN --mount=type=bind,source=src,target=src \
-    --mount=type=bind,source=migrations,target=migrations \
-    --mount=type=bind,source=.sqlx,target=.sqlx \
-    --mount=type=bind,source=Cargo.toml,target=Cargo.toml \
-    --mount=type=bind,source=Cargo.lock,target=Cargo.lock \
-    --mount=type=cache,target=/app/target/ \
-    --mount=type=cache,target=/var/cache/cargo \
-    CARGO_HOME=/var/cache/cargo cargo build --locked --release && \
-    cp ./target/release/$APP_NAME /bin/opentonic
-
-################################################################################
+# RUN --mount=type=bind,source=src,target=src \
+#     --mount=type=bind,source=migrations,target=migrations \
+#     --mount=type=bind,source=.sqlx,target=.sqlx \
+#     --mount=type=bind,source=Cargo.toml,target=Cargo.toml \
+#     --mount=type=bind,source=Cargo.lock,target=Cargo.lock \
+#     --mount=type=cache,target=/app/target/ \
+#     --mount=type=cache,target=/var/cache/cargo \
+#     CARGO_HOME=/var/cache/cargo cargo build --locked --release && \
+#     cp ./target/release/$APP_NAME /bin/opentonic
+#
+###############################################################################
 # Runtime stage (DOI Alpine image)
 # This stage runs the already-compiled binary with minimal dependencies.
-################################################################################
+###############################################################################
 
-FROM docker.io/library/alpine:3.18 AS final
+FROM docker.io/library/alpine AS final
 
 # Create a non-privileged user (recommended best practice)
 ARG UID=10001
-RUN adduser \
-    --disabled-password \
-    --gecos "" \
-    --home "/nonexistent" \
-    --shell "/sbin/nologin" \
-    --no-create-home \
-    --uid "${UID}" \
-    opentonic 
+# RUN adduser \
+#     --disabled-password \
+#     --gecos "" \
+#     --home "/nonexistent" \
+#     --shell "/sbin/nologin" \
+#     --no-create-home \
+#     --uid "${UID}" \
+#     opentonic 
+#
 
-VOLUME /data
 
 # Copy only the compiled binary from the build stage.
-COPY --from=build /bin/opentonic /bin/
-COPY ./html /app/html/
-COPY ./static /app/static/
+COPY ./target/aarch64-unknown-linux-musl/release/opentonic /bin/opentonic
+COPY ./ui /app/ui/
 COPY ./icons /data/icons/
 COPY ./docker_config.toml /data/config.toml
 COPY ./docker_db.sqlite /data/db.sqlite
-RUN chown opentonic:opentonic /data/db.sqlite
-RUN chown opentonic:opentonic /data/
+# RUN chown opentonic:opentonic /data/db.sqlite
+# RUN chown opentonic:opentonic /data/
 
-
+VOLUME /data
 
 # Document the port your app listens on.
 EXPOSE 80
 
 # Drop privileges for runtime.
-USER opentonic
+# USER opentonic
+
+# RUN apk add --no-cache gcompat
 
 # Start the application.
 CMD ["/bin/opentonic", "-c", "/data/config.toml"]

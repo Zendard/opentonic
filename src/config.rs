@@ -24,6 +24,7 @@ impl Config {
 
         // Remove trailing slash from url prefix
         config.url_prefix = config.url_prefix.trim_end_matches("/").to_string();
+        config.url_prefix += "/";
         // Add starting slash to url prefix
         if !config.url_prefix.starts_with("/") {
             config.url_prefix.insert(0, '/');

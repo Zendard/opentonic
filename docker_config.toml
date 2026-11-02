@@ -1,5 +1,5 @@
-html_dir = "/app/html"
-static = "/app/static"
+html_dir = "/app/ui"
+static = "/app/ui"
 icons = "/data/icons"
 db_file = "/data/db.sqlite"
 host_address = "0.0.0.0"
