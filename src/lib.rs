@@ -225,8 +225,8 @@ async fn serve_icons(
     extract::Path(path): extract::Path<String>,
 ) -> Result<Svg, StatusCode> {
     let full_path = state.config.icons_dir.join(path + ".svg");
-    let svg = fs::read(full_path).map_err(|_| StatusCode::NOT_FOUND)?;
-    Ok(Svg(svg))
+    let svg = fs::read(full_path).map_err(|_| StatusCode::NOT_FOUND);
+    Ok(Svg(svg?))
 }
 
 struct Svg(Vec<u8>);

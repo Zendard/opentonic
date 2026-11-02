@@ -92701,7 +92701,7 @@ for(;;)switch(s){case 0:n=A.ff(p.a+"api/"+a)
 m=p.b
 m===$&&A.a()
 o=t.N
-q=A.aMk(n,A.au(["authorization","Basic "+m],o,o))
+q=A.aMk(n,A.au([],o,o))
 s=1
 break
 case 1:return A.E(q,r)}})
@@ -92713,7 +92713,7 @@ for(;;)switch(s){case 0:n=A.ff(p.a+"api/"+a)
 m=p.b
 m===$&&A.a()
 o=t.N
-o=A.au(["authorization","Basic "+m,"content-type","application/json"],o,o)
+o=A.au(["content-type","application/json"],o,o)
 q=A.b20(n,B.aC.JQ(b,null),o)
 s=1
 break
@@ -92726,7 +92726,7 @@ for(;;)switch(s){case 0:n=A.ff(p.a+"api/"+a)
 m=p.b
 m===$&&A.a()
 o=t.N
-o=A.au(["authorization","Basic "+m,"content-type","application/json"],o,o)
+o=A.au(["content-type","application/json"],o,o)
 q=A.b23(n,B.aC.JQ(b,null),o)
 s=1
 break
@@ -92739,7 +92739,7 @@ for(;;)switch(s){case 0:n=A.ff(p.a+"api/"+a)
 m=p.b
 m===$&&A.a()
 o=t.N
-q=A.aN7(n,A.au(["authorization","Basic "+m],o,o))
+q=A.aN7(n,A.au([],o,o))
 s=1
 break
 case 1:return A.E(q,r)}})
@@ -92908,7 +92908,7 @@ l=p.b
 l===$&&A.a()
 o=t.N
 s=3
-return A.L(A.aMk(m,A.au(["authorization","Basic "+l],o,o)),$async$xh)
+return A.L(A.aMk(m,A.au([],o,o)),$async$xh)
 case 3:n=c
 m=n.b
 if(m===200){q=A.aMd(A.aL5(n.e)).eC(n.w)

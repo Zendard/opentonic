@@ -12,7 +12,7 @@ The config is loaded from `/etc/opentonic/config.toml` unless specified otherwis
 |`host_port`|u16|`80`|Port on which to host the web server|
 |`html_dir`|String|`./html`|Path to the HTML files|
 |`static`|String|`./static`|Path to the static files|
-|`icons`|String|`./icons`|Path to icon files|
+|`icons_dir`|String|`./icons`|Path to icon files|
 |`db_file`|String|`./db.sqlite`|Path to the SQLite database file|
 |`url_prefix`|String|`/`|Url prefix on which to receive requests (for running under a subdirectory)|
 
