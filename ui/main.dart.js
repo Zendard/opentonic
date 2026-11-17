@@ -92903,7 +92903,7 @@ return A.F($async$xc,r)},
 xh(a){return this.a1S(a)},
 a1S(a){var s=0,r=A.G(t.N),q,p=this,o,n,m,l
 var $async$xh=A.H(function(b,c){if(b===1)return A.D(c,r)
-for(;;)switch(s){case 0:m=A.ff(p.a+"/static/icons/"+a)
+for(;;)switch(s){case 0:m=A.ff(p.a+"static/icons/"+a)
 l=p.b
 l===$&&A.a()
 o=t.N

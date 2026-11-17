@@ -85,8 +85,21 @@ pub async fn create_list(
     .await
     .map_err(|_| StatusCode::INTERNAL_SERVER_ERROR)?;
 
+    let default_category_id = sqlx::query!(
+        "INSERT INTO Categories (name, list_id) VALUES ('Uncategorized', ?) RETURNING id",
+        list_id
+    )
+    .fetch_one(&mut *tx)
+    .await
+    .map_err(|_| StatusCode::INTERNAL_SERVER_ERROR)?
+    .id
+    .ok_or(StatusCode::INTERNAL_SERVER_ERROR)?;
+
     sqlx::query!(
-        "INSERT INTO Categories (name, list_id) VALUES ('Uncategorized', ?)",
+        "
+        UPDATE lists SET default_category_id=? WHERE id=?
+        ",
+        default_category_id,
         list_id
     )
     .execute(&mut *tx)

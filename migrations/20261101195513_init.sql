@@ -1,39 +1,34 @@
 -- Add migration script here
-CREATE TABLE IF NOT EXISTS Lists(
+CREATE TABLE Lists(
   id INTEGER PRIMARY KEY AUTOINCREMENT,
   name TEXT NOT NULL,
-  owner TEXT NOT NULL
+  owner TEXT NOT NULL,
+  default_category_id INTEGER REFERENCES Categories(id)
 );
-CREATE TABLE IF NOT EXISTS List_Accesses(
-  list_id INTEGER NOT NULL,
+CREATE TABLE List_Accesses(
+  list_id INTEGER NOT NULL REFERENCES Lists(id),
   user TEXT NOT NULL,
-  PRIMARY KEY(list_id,user),
-  FOREIGN KEY(list_id) REFERENCES Lists(id)
+  PRIMARY KEY(list_id,user)
 );
-CREATE TABLE IF NOT EXISTS Categories(
+CREATE TABLE Categories(
   id INTEGER PRIMARY KEY AUTOINCREMENT,
   name TEXT NOT NULL,
   icon_id TEXT,
   order_index INTEGER DEFAULT id NOT NULL,
-  list_id INTEGER NOT NULL,
-  FOREIGN KEY(list_id) REFERENCES Lists(id)
+  list_id INTEGER NOT NULL REFERENCES Lists(id)
 );
-CREATE TABLE IF NOT EXISTS Products(
+CREATE TABLE Products(
   id INTEGER PRIMARY KEY AUTOINCREMENT,
   name TEXT NOT NULL, 
-  category_id INTEGER DEFAULT 1 NOT NULL,
-  list_id INTEGER NOT NULL,
-  FOREIGN KEY(category_id) REFERENCES Categories(id)
-  FOREIGN KEY(list_id) REFERENCES Lists(id)
+  category_id INTEGER NOT NULL REFERENCES Categories(id),
+  list_id INTEGER NOT NULL REFERENCES Lists(id)
 );
-CREATE TABLE IF NOT EXISTS ListItems(
+CREATE TABLE ListItems(
   id INTEGER PRIMARY KEY AUTOINCREMENT,
   checked BOOL NOT NULL DEFAULT false,
-  product_id INTEGER NOT NULL,
-  list_id INTEGER NOT NULL,
+  product_id INTEGER NOT NULL REFERENCES Products(id),
+  list_id INTEGER NOT NULL REFERENCES Lists(id),
   added_by TEXT NOT NULL,
-  added_on DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
-  FOREIGN KEY(product_id) REFERENCES Products(id),
-  FOREIGN KEY(list_id) REFERENCES Lists(id)
+  added_on DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP
 );
 

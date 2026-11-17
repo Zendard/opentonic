@@ -95,13 +95,26 @@ pub async fn create_list_item(
     let product_id = if let Some(product_id) = product_id {
         product_id.id
     } else {
+        let default_category_id = sqlx::query!(
+            "
+            SELECT default_category_id FROM Lists WHERE id=?;
+            ",
+            list_id,
+        )
+        .fetch_one(&mut *tx)
+        .await
+        .map_err(|_| StatusCode::INTERNAL_SERVER_ERROR)?
+        .default_category_id
+        .ok_or(StatusCode::INTERNAL_SERVER_ERROR)?;
+
         sqlx::query!(
             "
-            INSERT INTO Products(name,list_id) VALUES (?,?);
+            INSERT INTO Products(name,list_id,category_id) VALUES (?,?,?);
             SELECT id FROM Products WHERE id==last_insert_rowid();
             ",
             body.name,
-            list_id
+            list_id,
+            default_category_id
         )
         .fetch_one(&mut *tx)
         .await
