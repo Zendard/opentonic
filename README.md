@@ -24,10 +24,6 @@ Please use a reverse proxy like nginx for authentication. Opentonic expects the 
 header to contain the username of the current user. In nginx this can be achieved with 
 `proxy_set_header X-Forwarded-User $remote_user;`
 
-## Icons
-OpenTonic does not provide icons itself. You have to place svg icons inside
-the icons folder (see config). I recommend [Noun Project](https://thenounproject.com/).
-
 ### Example nginx config
 ```
 worker_processes  1;
@@ -58,6 +54,10 @@ http {
   }
 }
 ```
+
+## Icons
+OpenTonic does not provide icons itself. You have to place svg icons inside
+the icons folder (see config). I recommend [Noun Project](https://thenounproject.com/).
 
 ## API
 OpenTonic provides a REST api at `/api/{resource}`
