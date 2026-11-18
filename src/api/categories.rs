@@ -35,7 +35,8 @@ pub async fn get_categories(
         Category,
         "
         SELECT id,name,order_index,icon_id FROM Categories
-        WHERE list_id=?;
+        WHERE list_id=?
+        ORDER BY order_index;
         ",
         list_id
     )

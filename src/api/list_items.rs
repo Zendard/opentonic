@@ -39,7 +39,8 @@ pub async fn get_list_items(
         SELECT li.id, p.name, added_by, datetime(added_on) as "added_on!", p.id as product_id, c.id as category_id, checked FROM ListItems li
         JOIN Products p ON p.id=product_id
         JOIN Categories c ON c.id=p.category_id
-        WHERE li.list_id=?;
+        WHERE li.list_id=?
+        ORDER BY c.order_index;
         "#,
         list_id
     )
