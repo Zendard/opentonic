@@ -51,7 +51,7 @@ ARG UID=10001
 
 # Copy only the compiled binary from the build stage.
 COPY ./target/aarch64-unknown-linux-musl/release/opentonic /bin/opentonic
-COPY ./ui /app/ui/
+# COPY ./ui /app/ui/
 COPY ./icons /data/icons/
 COPY ./docker_config.toml /data/config.toml
 COPY ./docker_db.sqlite /data/db.sqlite

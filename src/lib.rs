@@ -5,20 +5,8 @@ use axum::{
     response::{IntoResponse, Response},
     routing::{delete, get, post, put},
 };
-use memchr::memmem;
-use rayon::iter::{IntoParallelRefIterator, ParallelIterator};
 use sqlx::{Sqlite, sqlite::SqliteConnectOptions};
-use std::{
-    fs, io,
-    path::{Path, PathBuf},
-    str::FromStr,
-    sync::{
-        Arc,
-        atomic::{AtomicUsize, Ordering},
-    },
-};
-use tower_http::services::ServeDir;
-use walkdir::WalkDir;
+use std::{fs, str::FromStr, sync::Arc};
 
 mod api;
 pub mod config;
@@ -50,24 +38,12 @@ pub async fn run_server(mut config: Config) {
     let url_pfx = config.url_prefix.clone();
     let html_dir = config.html_dir.clone();
 
-    copy_dir_all(&html_dir, &html_dir.parent().unwrap().join(".run")).unwrap();
-
     let html_dir = html_dir.parent().unwrap().join(".run");
     config.html_dir = html_dir.clone();
 
-    let html_dir_clone = html_dir.clone();
-    ctrlc::set_handler(move || {
-        fs::remove_dir_all(html_dir_clone.clone()).unwrap();
-        std::process::exit(0);
-    })
-    .unwrap();
-
-    replace_in_dir(&html_dir, "/{url_pfx}/", &url_pfx);
-    replace_in_dir(&html_dir, "%7Burl_pfx%7D", &url_pfx);
-
     let server_state = Arc::new(ServerState { config, db_conn });
 
-    let mut server = axum::Router::new()
+    let server = axum::Router::new()
         .route(&(url_pfx.clone() + "static/icons/{path}"), get(serve_icons))
         .route(&(url_pfx.clone() + "api/lists"), get(api::lists::get_lists))
         .route(
@@ -142,82 +118,13 @@ pub async fn run_server(mut config: Config) {
             &(url_pfx.clone() + "api/lists/{list_id}/categories/{category_id}"),
             delete(api::categories::delete_category),
         )
-        .fallback_service(ServeDir::new(&html_dir))
         .with_state(server_state);
-
-    if !url_pfx.is_empty() {
-        server = server.nest_service(&url_pfx, ServeDir::new(&html_dir));
-    }
 
     let listener = tokio::net::TcpListener::bind(host_socket)
         .await
         .expect("Failed to bind to socket");
     println!("Starting server...");
     axum::serve(listener, server).await.unwrap();
-}
-
-fn replace_in_dir(root: &Path, from: &str, to: &str) -> usize {
-    let finder = memmem::Finder::new(from.as_bytes()); // built once, shared across threads
-    let replacement = to.as_bytes();
-    let changed = AtomicUsize::new(0);
-
-    let files: Vec<PathBuf> = WalkDir::new(root)
-        .into_iter()
-        .filter_entry(|e| e.file_name() != ".git") // never touch git internals
-        .filter_map(Result::ok)
-        .filter(|e| e.file_type().is_file()) // skips directories and symlinks
-        .map(|e| e.into_path())
-        .collect();
-
-    files.par_iter().for_each(|path| {
-        let result = (|| -> io::Result<()> {
-            let data = fs::read(path)?;
-
-            let mut matches = finder.find_iter(&data).peekable();
-            if matches.peek().is_none() {
-                return Ok(()); // nothing to do: don't rewrite the file
-            }
-
-            let mut out = Vec::with_capacity(data.len() + replacement.len());
-            let mut last = 0;
-            for pos in matches {
-                out.extend_from_slice(&data[last..pos]);
-                out.extend_from_slice(replacement);
-                last = pos + from.len();
-            }
-            out.extend_from_slice(&data[last..]);
-
-            fs::write(path, out)?;
-            changed.fetch_add(1, Ordering::Relaxed);
-            Ok(())
-        })();
-
-        if let Err(e) = result {
-            eprintln!("skipping {}: {e}", path.display());
-        }
-    });
-
-    changed.into_inner()
-}
-
-fn copy_dir_all(src: &Path, dst: &Path) -> io::Result<()> {
-    if dst.parent().unwrap() == src {
-        return Ok(());
-    };
-    let iter = WalkDir::new(src);
-    for entry in iter {
-        let entry = entry?; // walkdir::Error converts into io::Error
-        let rel = entry.path().strip_prefix(src).expect("entry is under src");
-        let target = dst.join(rel);
-
-        if entry.file_type().is_dir() {
-            fs::create_dir_all(&target)?;
-        } else {
-            // the parent should exist already, since the walk yields directories first
-            fs::copy(entry.path(), &target).unwrap();
-        }
-    }
-    Ok(())
 }
 
 async fn serve_icons(
