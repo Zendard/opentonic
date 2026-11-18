@@ -40,7 +40,7 @@ pub async fn get_list_items(
         JOIN Products p ON p.id=product_id
         JOIN Categories c ON c.id=p.category_id
         WHERE li.list_id=?
-        ORDER BY c.order_index;
+        ORDER BY li.checked, c.order_index;
         "#,
         list_id
     )
