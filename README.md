@@ -1,6 +1,8 @@
 # Opentonic
 An open source, simple, self-hosted, shared grocery list built in rust
 
+[![AI:R READ](https://img.shields.io/badge/AI-READ-grey?style=flat&logoSize=auto&labelColor=13171f)](https://0rwx.com)
+
 ## See also
 - [OpenTonic android](https://github.com/Zendard/opentonic-android), the official OpenTonic companion app written in flutter
 - This project is available as a [docker image](https://hub.docker.com/r/zendard/opentonic)
