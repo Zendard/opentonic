@@ -85,9 +85,10 @@ pub async fn create_list_item(
 
     let product_id = sqlx::query!(
         "
-        SELECT id FROM Products WHERE name=?;
+        SELECT id FROM Products WHERE name=? AND list_id=?;
         ",
-        body.name
+        body.name,
+        list_id
     )
     .fetch_optional(&mut *tx)
     .await
